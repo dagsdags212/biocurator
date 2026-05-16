@@ -40,14 +40,15 @@ class ConfigLoader:
     def _parse_job(name: str, data: dict) -> JobConfig:
         if not isinstance(data, dict):
             raise InvalidConfigError(f"Job '{name}' must be a mapping")
+
         search_data = data.get("search") or {}
         filter_data = data.get("filter") or {}
         export_data = data.get("export") or {}
+
         if not search_data.get("databases"):
-            raise InvalidConfigError(
-                f"Job '{name}': 'search.databases' is required"
-            )
-        search = SearchConfig(
+            raise InvalidConfigError(f"Job '{name}': 'search.databases' is required")
+
+        search_cfg = SearchConfig(
             databases=search_data["databases"],
             organism=search_data.get("organism"),
             sequence_type=search_data.get("sequence_type", "nucleotide"),
@@ -58,15 +59,20 @@ class ConfigLoader:
             location=search_data.get("location"),
             taxonomy_filter=search_data.get("taxonomy_filter"),
         )
+
         filter_cfg = FilterConfig(
             min_length=filter_data.get("min_length"),
             max_length=filter_data.get("max_length"),
             exclude_terms=filter_data.get("exclude_terms", []),
             quality_threshold=filter_data.get("quality_threshold"),
         )
-        export = ExportConfig(
+
+        export_cfg = ExportConfig(
             outdir=export_data.get("outdir", "results"),
             formats=export_data.get("formats", ["fasta"]),
             prefix=export_data.get("prefix", "biocurator"),
         )
-        return JobConfig(name=name, search=search, filter=filter_cfg, export=export)
+
+        return JobConfig(
+            name=name, search=search_cfg, filter=filter_cfg, export=export_cfg
+        )

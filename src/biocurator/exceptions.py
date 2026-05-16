@@ -1,3 +1,8 @@
+"""
+Biocurator customer exceptions.
+"""
+
+
 class BiocuratorError(Exception):
     """Base exception for all biocurator errors."""
 

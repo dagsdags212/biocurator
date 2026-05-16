@@ -199,6 +199,7 @@ class Biocurator:
         dict
             Mapping of format name to output file Path.
         """
+
         def _report(phase, current, total):
             if progress_callback:
                 progress_callback(phase, current, total)
@@ -226,8 +227,12 @@ class Biocurator:
                 exclude_terms=filter_cfg.exclude_terms,
                 taxonomy_filter=search_cfg.taxonomy_filter,
                 quality_threshold=filter_cfg.quality_threshold,
-                start_date=search_cfg.date_range.get("start") if search_cfg.date_range else None,
-                end_date=search_cfg.date_range.get("end") if search_cfg.date_range else None,
+                start_date=search_cfg.date_range.get("start")
+                if search_cfg.date_range
+                else None,
+                end_date=search_cfg.date_range.get("end")
+                if search_cfg.date_range
+                else None,
             )
 
             ids = searcher.search(criteria)
@@ -287,6 +292,7 @@ class Biocurator:
 
             if "json" in export_config.formats and self.metadata:
                 import json as _json
+
                 json_file = export_dir / f"{prefix}_metadata.json"
                 with open(json_file, "w") as f:
                     _json.dump(self.metadata, f, indent=2, default=str)

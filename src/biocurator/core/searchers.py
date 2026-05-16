@@ -193,7 +193,7 @@ class NCBISearcher(DatabaseSearcher):
 
             except Exception as exc:
                 logger.warning(
-                    f"Error fetching metadata for batch {i//batch_size+1}: {exc}"
+                    f"Error fetching metadata for batch {i // batch_size + 1}: {exc}"
                 )
 
         logger.info(f"Retrieved metadata for {len(metadata_list)} sequences")
@@ -340,7 +340,7 @@ class UniProtSearcher(DatabaseSearcher):
 
             except Exception as exc:
                 logger.warning(
-                    f"Error fetching UniProt metadata for batch {i//batch_size + 1}: {exc}"
+                    f"Error fetching UniProt metadata for batch {i // batch_size + 1}: {exc}"
                 )
                 continue
 

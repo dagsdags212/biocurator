@@ -56,7 +56,9 @@ jobs:
 def init_command(
     output: Annotated[
         str | None,
-        typer.Option("--output", "-o", help="Write config to this file instead of stdout"),
+        typer.Option(
+            "--output", "-o", help="Write config to this file instead of stdout"
+        ),
     ] = None,
     template: Annotated[
         str,
