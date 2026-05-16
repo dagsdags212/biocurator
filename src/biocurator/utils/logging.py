@@ -609,3 +609,31 @@ def ensure_logging_initialized():
     if not _logging_initialized:
         initialize_logging()
         _logging_initialized = True
+
+
+def enable_verbose_logging() -> None:
+    """Attach an INFO-level stdout handler to the biocurator root logger.
+
+    Format: ``YYYY-MM-DD HH:MM:SS  LEVEL     message``
+
+    Safe to call multiple times — duplicate handlers are not added.
+    """
+    root = logging.getLogger("biocurator")
+
+    if any(
+        isinstance(h, logging.StreamHandler) and getattr(h, "stream", None) is sys.stdout
+        for h in root.handlers
+    ):
+        return
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(
+        logging.Formatter(
+            fmt="%(asctime)s  %(levelname)-8s  %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    )
+    handler.addFilter(BioCuratorLogFilter())
+    root.addHandler(handler)
+    root.setLevel(logging.INFO)

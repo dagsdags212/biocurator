@@ -62,8 +62,10 @@ class SequenceFilter:
                 f"Length filter (max {criteria.max_length}): {len(filtered)} sequences remain"
             )
 
-        # Organism filter (if not already applied in search)
-        if criteria.organism and "organism" in filtered[0] if filtered else {}:
+        # Organism filter — only runs when records carry a populated organism field.
+        # NCBI esummary doesn't include an Organism field, so records fetched at the
+        # metadata stage will have organism="" and would be incorrectly rejected.
+        if criteria.organism and filtered and filtered[0].get("organism"):
             organism_lower = criteria.organism.lower()
             filtered = [
                 s for s in filtered if organism_lower in s.get("organism", "").lower()
@@ -97,17 +99,44 @@ class SequenceFilter:
                 ]
             logger.info(f"Exclude terms filter: {len(filtered)} sequences remain")
 
-        # Quality filter
+        # Quality filter — deferred to after download; sequences without actual
+        # sequence data (metadata-only records) would score 0.0 and be incorrectly
+        # rejected.  Use SequenceFilter.apply_quality_filter() on downloaded sequences.
         if criteria.quality_threshold and filtered:
-            filtered = SequenceFilter.__filter_by_quality(
-                filtered, criteria.quality_threshold
-            )
-            logger.info(f"Quality filter: {len(filtered)} sequences remain")
+            if any(s.get("sequence") for s in filtered):
+                filtered = SequenceFilter.__filter_by_quality(
+                    filtered, criteria.quality_threshold
+                )
+                logger.info(f"Quality filter: {len(filtered)} sequences remain")
+            else:
+                logger.info(
+                    "Quality filter deferred: sequence data not yet available"
+                )
 
         logger.info(
             f"Filtering complete: {len(filtered)}/{initial_count} sequences passed filters"
         )
         return filtered
+
+    @staticmethod
+    def apply_quality_filter(
+        sequences: List[Dict[str, Any]], threshold: float
+    ) -> List[Dict[str, Any]]:
+        """Apply quality filtering to downloaded sequences.
+
+        Parameters
+        ----------
+        sequences : List[Dict[str, Any]]
+            Sequences that include actual sequence data.
+        threshold : float
+            Minimum quality score (0.0–1.0).
+
+        Returns
+        -------
+        List[Dict[str, Any]]
+            Sequences whose quality score meets the threshold.
+        """
+        return SequenceFilter.__filter_by_quality(sequences, threshold)
 
     @staticmethod
     def __filter_by_quality(

@@ -9,12 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1] - 2026-05-16
 
+### Added
+
+- `--verbose` / `-v` flag on `biocurator run` — attaches an INFO-level stdout
+  handler to the root logger so progress messages are printed during a run.
+  Format: `YYYY-MM-DD HH:MM:SS  LEVEL     message`.
+- `enable_verbose_logging()` in `biocurator.utils.logging` — public helper that
+  wires up the stdout handler; safe to call multiple times (duplicate handlers
+  are not added).
+
 ### Fixed
 
 - `NCBISearcher.fetch_metadata` stored sequence length under `"length"` but
   `SequenceFilter.filter_by_criteria` checked `"sequence_length"`, causing every
   sequence to evaluate as length 0 and be dropped by any `min_length`/`max_length`
   filter. Renamed the key to `"sequence_length"` to match the filter.
+- `SequenceFilter.filter_by_criteria` applied the organism post-filter even when
+  metadata records had an empty `organism` field. NCBI's `esummary` endpoint does
+  not return an `Organism` field, so every record received `organism: ""` and was
+  incorrectly rejected. The filter now skips when the field is unpopulated.
+- `SequenceFilter.filter_by_criteria` applied the quality filter to pre-download
+  metadata records, which lack sequence data. `__calculate_quality_score` returned
+  `0.0` for any record without a `"sequence"` key, causing all records to fail any
+  non-zero threshold. Quality filtering is now deferred to after `download()` via
+  the new `SequenceFilter.apply_quality_filter` method, which `Biocurator.run_job`
+  calls on the downloaded sequence set.
 
 ## [0.1.0] - 2026-05-16
 

@@ -17,6 +17,7 @@ from biocurator.exceptions import (
     InvalidConfigError,
     JobNotFoundError,
 )
+from biocurator.utils.logging import enable_verbose_logging
 
 
 def run_command(
@@ -33,8 +34,17 @@ def run_command(
             "--dry-run", help="Validate config and preview jobs without downloading"
         ),
     ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose", "-v", help="Print timestamped log messages to stdout"
+        ),
+    ] = False,
 ):
     """Run curation jobs defined in a YAML config file."""
+    if verbose:
+        enable_verbose_logging()
+
     console = Console()
 
     try:

@@ -252,6 +252,12 @@ class Biocurator:
             export_dir = Path(job_config.export.outdir)
             export_dir.mkdir(parents=True, exist_ok=True)
             sequences = searcher.download(filtered_ids, export_dir)
+
+            if criteria.quality_threshold and sequences:
+                sequences = SequenceFilter.apply_quality_filter(
+                    sequences, criteria.quality_threshold
+                )
+
             _report("download", len(sequences), len(filtered_ids))
 
             all_sequences.extend(sequences)
