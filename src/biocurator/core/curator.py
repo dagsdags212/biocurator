@@ -64,7 +64,6 @@ class Biocurator:
             logger.debug(f"Output directory set to: {outdir}")
 
         self.outdir = Path(self.config.get("output_directory", "biocurator_output"))
-        self.outdir.mkdir(exist_ok=True)
         logger.info(f"Output directory: {self.outdir}")
 
         # Initialize database searchers
@@ -382,6 +381,7 @@ class Biocurator:
                 # Download sequences
                 perf_logger.start_timer(f"download_{db_name}")
                 filtered_ids = [m["id"] for m in filtered_metadata]
+                self.outdir.mkdir(parents=True, exist_ok=True)
                 sequences = searcher.download(filtered_ids, self.outdir)
                 perf_logger.end_timer(
                     f"download_{db_name}", download_count=len(sequences)
@@ -447,6 +447,7 @@ class Biocurator:
             return {}
 
         output_files = {}
+        self.outdir.mkdir(parents=True, exist_ok=True)
 
         try:
             # Save FASTA
@@ -603,9 +604,11 @@ class Biocurator:
             Path to created FASTA file
         """
         if filename is None:
+            self.outdir.mkdir(parents=True, exist_ok=True)
             filename = self.outdir / "sequences.fasta"
         else:
             filename = Path(filename)
+            filename.parent.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Exporting {len(self.sequences)} sequences to FASTA: {filename}")
 

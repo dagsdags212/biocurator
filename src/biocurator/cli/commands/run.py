@@ -40,6 +40,12 @@ def run_command(
             "--verbose", "-v", help="Print timestamped log messages to stdout"
         ),
     ] = False,
+    outdir: Annotated[
+        Optional[str],
+        typer.Option(
+            "--outdir", "-o", help="Output directory (overrides each job's export.outdir)"
+        ),
+    ] = None,
 ):
     """Run curation jobs defined in a YAML config file."""
     console = Console()
@@ -75,6 +81,10 @@ def run_command(
                 f"  • [bold]{job.name}[/bold]  databases={job.search.databases}"
             )
         return
+
+    if outdir:
+        for job in selected_jobs:
+            job.export.outdir = outdir
 
     curator = Biocurator(email=global_config.email)
 

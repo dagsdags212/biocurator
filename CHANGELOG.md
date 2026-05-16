@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `--debug` global flag on `biocurator` — enables INFO-level stdout logging via
   `enable_verbose_logging()` across all subcommands.
+- `--outdir` / `-o` option on `biocurator run` — overrides the `export.outdir`
+  of every selected job, allowing the output directory to be set from the CLI
+  without editing the config file.
 - `--verbose` / `-v` flag on `biocurator run` — attaches an INFO-level handler
   to the root logger so progress messages are printed during a run.
   Format: `YYYY-MM-DD HH:MM:SS  LEVEL     message`.
@@ -25,6 +28,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `biocurator_output/` directory is no longer created on startup. `Biocurator`
+  used to call `mkdir` unconditionally in `__init__`; directories are now
+  created lazily only when a method actually writes files. The output location
+  is controlled by `export.outdir` in the job config (per-job) or the new
+  `--outdir` CLI flag.
 - `--version` flag now correctly prints the current version and exits when
   invoked without a subcommand; previously `no_args_is_help=True` caused Typer
   to show help instead of running the callback. Fixed by attaching a Click-level
