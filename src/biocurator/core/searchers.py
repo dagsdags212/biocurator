@@ -180,7 +180,7 @@ class NCBISearcher(DatabaseSearcher):
                             "accession": summary.get("AccessionVersion", ""),
                             "title": summary.get("Title", ""),
                             "organism": summary.get("Organism", ""),
-                            "length": int(summary.get("Length", 0)),
+                            "sequence_length": int(summary.get("Length", 0)),
                             "create_date": summary.get("CreateDate", ""),
                             "update_date": summary.get("UpdateDate", ""),
                             "authors": summary.get("AuthorList", ""),
