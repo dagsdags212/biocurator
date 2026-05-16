@@ -611,29 +611,44 @@ def ensure_logging_initialized():
         _logging_initialized = True
 
 
-def enable_verbose_logging() -> None:
-    """Attach an INFO-level stdout handler to the biocurator root logger.
+def enable_verbose_logging(console=None) -> None:
+    """Attach an INFO-level handler to the biocurator root logger.
+
+    When *console* (a ``rich.console.Console``) is provided, a ``RichHandler``
+    is used so log lines are coordinated with any active Rich live display
+    (e.g. a progress bar) and never overlap with it.  Without a console a
+    plain ``StreamHandler`` writing to stdout is used instead.
 
     Format: ``YYYY-MM-DD HH:MM:SS  LEVEL     message``
 
-    Safe to call multiple times — duplicate handlers are not added.
+    Safe to call multiple times — a second handler is not added.
     """
     root = logging.getLogger("biocurator")
 
-    if any(
-        isinstance(h, logging.StreamHandler) and getattr(h, "stream", None) is sys.stdout
-        for h in root.handlers
-    ):
+    if any(getattr(h, "_biocurator_verbose", False) for h in root.handlers):
         return
 
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.INFO)
-    handler.setFormatter(
-        logging.Formatter(
-            fmt="%(asctime)s  %(levelname)-8s  %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+    if console is not None:
+        from rich.logging import RichHandler
+
+        handler = RichHandler(
+            console=console,
+            show_path=False,
+            markup=False,
+            highlighter=None,
+            log_time_format="%Y-%m-%d %H:%M:%S",
         )
-    )
+    else:
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(
+            logging.Formatter(
+                fmt="%(asctime)s  %(levelname)-8s  %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
+            )
+        )
+
+    handler.setLevel(logging.INFO)
     handler.addFilter(BioCuratorLogFilter())
+    handler._biocurator_verbose = True  # type: ignore[attr-defined]
     root.addHandler(handler)
     root.setLevel(logging.INFO)

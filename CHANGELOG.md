@@ -11,12 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `--verbose` / `-v` flag on `biocurator run` — attaches an INFO-level stdout
-  handler to the root logger so progress messages are printed during a run.
+- `--verbose` / `-v` flag on `biocurator run` — attaches an INFO-level handler
+  to the root logger so progress messages are printed during a run.
   Format: `YYYY-MM-DD HH:MM:SS  LEVEL     message`.
-- `enable_verbose_logging()` in `biocurator.utils.logging` — public helper that
-  wires up the stdout handler; safe to call multiple times (duplicate handlers
-  are not added).
+- `enable_verbose_logging(console=None)` in `biocurator.utils.logging` — public
+  helper that wires up the verbose handler; when a `rich.console.Console` is
+  passed, a `RichHandler` is used so log lines are coordinated with any active
+  Rich live display and never overlap with the progress bar; falls back to a
+  plain stdout `StreamHandler` when called without a console; safe to call
+  multiple times (duplicate handlers are not added).
 
 ### Fixed
 

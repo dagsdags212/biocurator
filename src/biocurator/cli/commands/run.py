@@ -42,10 +42,10 @@ def run_command(
     ] = False,
 ):
     """Run curation jobs defined in a YAML config file."""
-    if verbose:
-        enable_verbose_logging()
-
     console = Console()
+
+    if verbose:
+        enable_verbose_logging(console=console)
 
     try:
         global_config = ConfigLoader.load(config)
