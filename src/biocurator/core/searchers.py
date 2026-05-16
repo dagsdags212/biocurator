@@ -1,6 +1,6 @@
 """
 Database Searchers API
-=========
+======================
 
 This module implements the logic for querying various biological databases
 including NCBI and UniProt. Each searcher implements the DatabaseSearcher interface
@@ -41,9 +41,9 @@ class SearchCriteria:
     start_date: Optional[str] = None
     end_date: Optional[str] = None
     max_results: int = 100
-    exlude_terms: List[str] = field(default_factory=list)
+    exclude_terms: List[str] = field(default_factory=list)
     taxonomy_filter: Optional[str] = None
-    quality_threshold: Optional[str] = None
+    quality_threshold: Optional[float] = None
 
 
 @dataclass
@@ -51,7 +51,7 @@ class DatabaseConfig:
     """Data model for storing database access configuration"""
 
     name: str
-    base_url: str
+    base_url: Optional[str] = None
     api_key: Optional[str] = None
     rate_limit: float = 0.3
     batch_size: int = 20
@@ -131,8 +131,8 @@ class NCBISearcher(DatabaseSearcher):
         if criteria.taxonomy_filter:
             query_parts.append(f'"{criteria.taxonomy_filter}"[Organism]')
 
-        if criteria.exlude_terms:
-            for term in criteria.exlude_terms:
+        if criteria.exclude_terms:
+            for term in criteria.exclude_terms:
                 query_parts.append(f'NOT "{term}"')
 
         query = " AND ".join(query_parts)
