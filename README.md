@@ -1,356 +1,377 @@
-# ASFV Genome Extraction Pipeline
+# biocurator
 
-A comprehensive bioinformatics pipeline for extracting and analyzing African Swine Fever Virus (ASFV) genomes.
-
-## Overview
-
-This pipeline automates the process of:
-
-1. Searching NCBI databases for ASFV genome sequences
-2. Filtering for sequences from a specified geographic location
-3. Downloading and organizing the sequences
-4. Performing basic genomic analysis
-5. Generating summary reports and visualizations
+A config-driven framework for curating biological sequence datasets from various databases. Define your search, filter, and export parameters in a YAML file; `biocurator` handles the rest.
 
 ## Features
 
-- **Automated NCBI Search**: searches multiple databases with customizable items
-- **Location-based Filtering**: specifically target sequences collected from a geographic target
-- **Quality Control**: filter sequences based on length and quality criteria
-- **Comprehensive Analysis**: provide sequence statistics, composition analysis, and conservation screening
-- **Rich Visualizations**: generates publication-ready plots and graphs
-- **Flexible Configuration**: easily customizable search parameters
-- **Detailed Logging**: comprehensive logs for troubleshooting and reproducibility
+- **Multi-database search** — NCBI (nucleotide, protein, SRA) and UniProt
+- **Typed config schema** — validated YAML with sensible defaults
+- **Flexible filtering** — length, quality score, organism, keywords, date range
+- **Multiple export formats** — FASTA, CSV, JSON
+- **Rich CLI** — progress bars, dry-run mode, per-job filtering
 
-## Requirements
+## Supported Databases
 
-### Python Dependencies
+- NCBI
+- UniProt
+
+## Installation
+
+Requires Python 3.13+.
 
 ```bash
-pip install -r requirements.txt
+# With uv (recommended)
+uv pip install biocurator
+
+# With pip
+pip install biocurator
 ```
-
-Required packages:
-
-- biopython (>=1.79)
-- requests (>=2.28.0)
-- pandas (>=1.5.0)
-- numpy (>=1.21.0)
-- matplotlib (>=3.5.0)
-- seaborn (>=0.11.0)
-
-### Optional Tools
-
-- **entrez-direct**: For enhanced NCBI database access
-
-  ```bash
-  # Via conda
-  conda install -c bioconda entrez-direct
-
-  # Or via apt (Ubuntu/Debian)
-  sudo apt-get install ncbi-entrez-direct
-  ```
 
 ## Quick Start
 
-### 1. Basic Usage
+### 1. Generate a config file
 
 ```bash
-# Make the script executable
-chmod +x run_asfv_pipeline.sh
-
-# Run with automatic dependency installation
-./run_asfv_pipeline.sh --email your.email@university.edu --install-deps
-
-# Or run without dependency installation
-./run_asfv_pipeline.sh --email your.email@university.edu
+biocurator init --output config.yaml
 ```
 
-### 2. Python Direct Usage
+This writes a starter YAML to `config.yaml`. Use `--template advanced` to include all optional fields:
 
 ```bash
-# Run the main pipeline
-python3 asfv_philippines_pipeline.py --email your.email@university.edu
-
-# Run analysis on downloaded genomes
-python3 analyze_genomes.py --input-dir asfv_philippines_genomes
+biocurator init --template advanced --output config.yaml
 ```
 
-## Detailed Usage
+### 2. Edit the config
 
-### Main Pipeline Script
+```yaml
+email: your@email.com
 
-```bash
-python3 asfv_philippines_pipeline.py [OPTIONS]
-
-Required:
-  --email EMAIL        Your email address for NCBI Entrez (required by NCBI)
-
-Optional:
-  --output-dir DIR     Output directory (default: asfv_philippines_genomes)
+jobs:
+  covid-genomes:
+    search:
+      databases: [ncbi]
+      organism: "SARS-CoV-2"
+      sequence_type: nucleotide
+      keywords: ["complete genome"]
+      max_results: 50
+    filter:
+      min_length: 29000
+      quality_threshold: 0.8
+    export:
+      outdir: results/covid
+      formats: [fasta, csv]
+      prefix: sars_cov2
 ```
 
-### Analysis Script
+### 3. Run a dry-run to preview
 
 ```bash
-python3 analyze_genomes.py [OPTIONS]
-
-Optional:
-  --input-dir DIR      Directory containing downloaded genomes
-  --output-dir DIR     Output directory for analysis results
+biocurator run config.yaml --dry-run
 ```
 
-### Shell Wrapper
+```
+Dry run — 1 job(s) would execute:
+  • covid-genomes  databases=['ncbi']
+```
+
+### 4. Execute
 
 ```bash
-./run_asfv_pipeline.sh [OPTIONS]
+biocurator run config.yaml
+```
 
-Required:
-  --email EMAIL        Your email address for NCBI Entrez
+## Config Reference
 
-Optional:
-  --output-dir DIR     Output directory
-  --install-deps       Install Python dependencies automatically
-  --help              Show help message
+Every config file has a top-level `email` (required for NCBI access) and a `jobs` map where each key is the job name.
+
+```yaml
+email: your@email.com # required
+
+jobs:
+  <job-name>:
+    search:
+      databases: [ncbi] # required: ncbi | uniprot
+      organism: null # e.g. "SARS-CoV-2", "E. coli"
+      sequence_type: nucleotide # nucleotide | protein | sra
+      keywords: [] # AND-joined with other terms
+      max_results: 100
+      exclude_terms: [] # excluded from search
+      location: null # geographic filter, e.g. "Philippines"
+      taxonomy_filter: null # taxon name or ID
+      date_range:
+        start: "2020/01/01" # YYYY/MM/DD
+        end: "2024/12/31"
+    filter:
+      min_length: null # minimum sequence length (bp / aa)
+      max_length: null # maximum sequence length (bp / aa)
+      exclude_terms: [] # excluded from title/description
+      quality_threshold: null # 0.0–1.0; filters on N/X content
+    export:
+      outdir: results # output directory (created if absent)
+      formats: [fasta] # fasta | csv | json
+      prefix: biocurator # filename prefix for output files
+```
+
+Defaults apply to any omitted field, so a minimal job only needs `search.databases`:
+
+```yaml
+email: your@email.com
+
+jobs:
+  simple:
+    search:
+      databases: [ncbi]
+      organism: "Homo sapiens"
+    filter: {}
+    export: {}
+```
+
+## CLI Reference
+
+### `biocurator init`
+
+Generate a starter config file.
+
+```
+Usage: biocurator init [OPTIONS]
+
+Options:
+  -o, --output TEXT    Write config to this file instead of stdout
+  -t, --template TEXT  Template to use: basic (default) or advanced
+```
+
+### `biocurator run`
+
+Run all jobs defined in a config file.
+
+```
+Usage: biocurator run [OPTIONS] CONFIG
+
+Arguments:
+  CONFIG  Path to the YAML config file  [required]
+
+Options:
+  -j, --jobs TEXT  Comma-separated job names to run (default: all)
+  --dry-run        Validate config and preview jobs without downloading
+```
+
+**Run only specific jobs:**
+
+```bash
+biocurator run config.yaml --jobs covid-genomes,spike-proteins
+```
+
+**Dry-run before committing:**
+
+```bash
+biocurator run config.yaml --dry-run
+```
+
+## Usage Examples
+
+### Viral genome surveillance
+
+Collect complete SARS-CoV-2 genomes deposited in 2024, filtered for quality:
+
+```yaml
+email: researcher@uni.edu
+
+jobs:
+  sars-cov2-2024:
+    search:
+      databases: [ncbi]
+      organism: "SARS-CoV-2"
+      sequence_type: nucleotide
+      keywords: ["complete genome"]
+      max_results: 500
+      exclude_terms: [synthetic, artificial, recombinant]
+      date_range:
+        start: "2024/01/01"
+        end: "2024/12/31"
+    filter:
+      min_length: 29000
+      quality_threshold: 0.9
+    export:
+      outdir: results/sars_2024
+      formats: [fasta, csv]
+      prefix: sars_cov2_2024
+```
+
+### Antibiotic resistance genes
+
+Collect beta-lactamase nucleotide sequences from NCBI:
+
+```yaml
+email: researcher@uni.edu
+
+jobs:
+  beta-lactamase:
+    search:
+      databases: [ncbi]
+      sequence_type: nucleotide
+      keywords: ["beta-lactamase", "bla gene"]
+      max_results: 300
+      exclude_terms: [partial, predicted]
+    filter:
+      min_length: 500
+      max_length: 3000
+    export:
+      outdir: results/amr
+      formats: [fasta, csv, json]
+      prefix: bla_genes
+```
+
+### Multi-database protein family study
+
+Search both NCBI and UniProt for a protein family in the same job:
+
+```yaml
+email: researcher@uni.edu
+
+jobs:
+  cytochrome-p450:
+    search:
+      databases: [ncbi, uniprot]
+      sequence_type: protein
+      keywords: ["cytochrome P450", "CYP"]
+      max_results: 200
+    filter:
+      min_length: 300
+      quality_threshold: 0.8
+    export:
+      outdir: results/cyp450
+      formats: [fasta, csv]
+      prefix: cyp450
+```
+
+### Multiple independent jobs in one run
+
+```yaml
+email: researcher@uni.edu
+
+jobs:
+  spike-proteins:
+    search:
+      databases: [uniprot]
+      organism: "SARS-CoV-2"
+      sequence_type: protein
+      keywords: ["spike glycoprotein"]
+      max_results: 100
+    filter:
+      min_length: 1200
+    export:
+      outdir: results/spike
+      formats: [fasta]
+      prefix: spike
+
+  nucleocapsid-proteins:
+    search:
+      databases: [uniprot]
+      organism: "SARS-CoV-2"
+      sequence_type: protein
+      keywords: ["nucleocapsid protein"]
+      max_results: 100
+    filter:
+      min_length: 400
+    export:
+      outdir: results/ncap
+      formats: [fasta]
+      prefix: ncap
+```
+
+Run them together or selectively:
+
+```bash
+# All jobs
+biocurator run config.yaml
+
+# Only one
+biocurator run config.yaml --jobs spike-proteins
+```
+
+## Python API
+
+You can drive curation from Python directly using `Biocurator.run_job()`:
+
+```python
+from biocurator.core.curator import Biocurator
+from biocurator.config.schema import (
+    JobConfig, SearchConfig, FilterConfig, ExportConfig,
+)
+
+job = JobConfig(
+    name="my-job",
+    search=SearchConfig(
+        databases=["ncbi"],
+        organism="SARS-CoV-2",
+        sequence_type="nucleotide",
+        keywords=["complete genome"],
+        max_results=10,
+    ),
+    filter=FilterConfig(min_length=29000, quality_threshold=0.8),
+    export=ExportConfig(outdir="results", formats=["fasta", "csv"], prefix="sars"),
+)
+
+curator = Biocurator(email="your@email.com")
+output_files = curator.run_job(job)
+# {"fasta": PosixPath("results/sars_sequences.fasta"), "csv": PosixPath("results/sars_metadata.csv")}
+```
+
+Progress callbacks let you integrate with your own UI:
+
+```python
+def on_progress(phase: str, current: int, total: int):
+    print(f"[{phase}] {current}/{total}")
+
+curator.run_job(job, progress_callback=on_progress)
+```
+
+Load a config file programmatically:
+
+```python
+from biocurator.config.loader import ConfigLoader
+
+config = ConfigLoader.load("config.yaml")
+curator = Biocurator(email=config.email)
+
+for job in config.jobs:
+    output_files = curator.run_job(job)
+    print(f"{job.name}: {list(output_files)}")
 ```
 
 ## Output Files
 
-### Main Pipeline Outputs
-
-1. **asfv_philippines_genomes.fasta**
-   - FASTA file containing all downloaded ASFV genome sequences
-   - Sequences have descriptive headers with accession and metadata
-2. **asfv_philippines_metadata.csv**
-   - Detailed metadata for each sequence including:
-     - Accession numbers
-     - Sequence lengths
-     - Organism information
-     - Publication dates
-     - Download status
-3. **extraction_summary.txt**
-   - Summary report with:
-     - Total sequences downloaded
-     - Length statistics
-     - List of all sequences
-     - File descriptions
-4. **asfv_pipeline.log**
-   - Detailed execution log for troubleshooting
-
-### Analysis Outputs
-
-1. **sequence_statistics.csv**
-   - Detailed statistics for each genome:
-     - Length, GC content
-     - Nucleotide composition
-     - AT/GC skew values
-2. **genome_analysis_plots.png**
-   - Comprehensive visualization including:
-     - Length distribution
-     - GC content analysis
-     - Nucleotide composition
-     - Comparative plots
-3. **conserved_regions.csv**
-   - Potentially conserved regions across genomes
-   - Useful for identifying important functional regions
-4. **analysis_summary.txt**
-   - Summary of analysis results and recommendations
-
-## Configuration
-
-Edit `pipeline_config.ini` to customize:
-
-- **Search Terms**: Add specific ASFV strain names or Philippines locations
-- **Sequence Filters**: Adjust length ranges and quality thresholds
-- **Output Options**: Customize file naming and header information
-- **Analysis Parameters**: Modify conservation analysis settings
-  Example configuration modifications:
-
-```ini
-[search_parameters]
-# Add specific strain names
-asfv_terms = African swine fever virus, ASFV, ASFV-G-I, Georgia 2007/1
-
-# Add more specific Philippines locations
-philippines_terms = Philippines, Luzon, NCR, CALABARZON, Central Luzon
-
-[filtering]
-# Exclude unwanted sequence types
-exclude_terms = synthetic, artificial, vector, plasmid
-```
-
-## Workflow Steps
-
-### Step 1: Database Search
-
-- Constructs optimized search queries for NCBI
-- Searches nucleotide database for ASFV sequences
-- Filters by sequence length and relevance
-
-### Step 2: Location Filtering
-
-- Examines sequence titles and metadata
-- Identifies sequences from Philippines samples
-- Validates ASFV classification
-
-### Step 3: Sequence Download
-
-- Downloads FASTA sequences in batches
-- Implements rate limiting to respect NCBI policies
-- Handles errors and retries failed downloads
-
-### Step 4: Data Organization
-
-- Creates structured output directory
-- Generates comprehensive metadata
-- Produces summary statistics
-
-### Step 5: Analysis (Optional)
-
-- Calculates sequence composition statistics
-- Identifies potential conserved regions
-- Creates publication-ready visualizations
+| File                       | Format | Contents                                 |
+| -------------------------- | ------ | ---------------------------------------- |
+| `<prefix>_sequences.fasta` | FASTA  | Downloaded sequences                     |
+| `<prefix>_metadata.csv`    | CSV    | Per-sequence metadata                    |
+| `<prefix>_metadata.json`   | JSON   | Per-sequence metadata (machine-readable) |
 
 ## Troubleshooting
 
-### Common Issues
+**No sequences returned**
 
-1. **No sequences found**
-   - Check internet connection
-   - Verify email format
-   - Try broadening search terms in config file
-2. **Download failures**
-   - NCBI servers may be busy - retry later
-   - Check firewall settings
-   - Verify NCBI access from your network
-3. **Permission errors**
-   - Ensure write permissions in output directory
-   - Check disk space availability
-4. **Missing dependencies**
-   - Run with `--install-deps` flag
-   - Manually install packages: `pip install -r requirements.txt`
+- Broaden `keywords`, remove `exclude_terms`, or increase `max_results`
+- Verify the organism name matches NCBI/UniProt taxonomy exactly
 
-### Log Analysis
+**NCBI rate-limit errors**
 
-Check the log files for detailed error information:
+- NCBI enforces 3 requests/second without an API key; the searcher already respects this, but heavy jobs may be slow
+
+**`InvalidConfigError: 'email' is required`**
+
+- Add `email: your@email.com` at the top level of the YAML
+
+**`ConfigNotFoundError`**
+
+- Check the path passed to `biocurator run` — use `--dry-run` to validate before downloading
+
+**Enable debug logging**
 
 ```bash
-# View the main pipeline log
-cat asfv_pipeline.log
-
-# View recent log entries
-tail -f asfv_pipeline.log
+biocurator --debug run config.yaml
 ```
-
-## Advanced Usage
-
-### Custom Search Queries
-
-For more specific searches, you can modify the search terms directly:
-
-```python
-# In asfv_philippines_pipeline.py, modify the search terms
-self.asfv_terms = [
-    "African swine fever virus",
-    "ASFV",
-    "Your specific strain name"
-]
-
-self.philippines_terms = [
-    "Philippines",
-    "Your specific region"
-]
-```
-
-### Batch Processing
-
-To process multiple searches or compare different parameters:
-
-```bash
-# Create multiple configuration files
-cp pipeline_config.ini config_luzon.ini
-cp pipeline_config.ini config_mindanao.ini
-
-# Run separate extractions
-python3 asfv_philippines_pipeline.py --email your@email.com --output-dir luzon_genomes
-python3 asfv_philippines_pipeline.py --email your@email.com --output-dir mindanao_genomes
-```
-
-### Integration with Other Tools
-
-The pipeline outputs are compatible with standard bioinformatics tools:
-
-```bash
-# Multiple sequence alignment with MAFFT
-mafft --auto asfv_philippines_genomes.fasta > aligned_genomes.fasta
-
-# Phylogenetic analysis with FastTree
-FastTree -nt -gtr aligned_genomes.fasta > phylogenetic_tree.newick
-
-# Genome annotation with Prokka
-prokka --outdir annotation_results --genus Asfivirus asfv_philippines_genomes.fasta
-```
-
-## Citations and Data Usage
-
-### Citing This Pipeline
-
-If you use this pipeline in your research, please cite:
-
-```
-ASFV Philippines Genome Extraction Pipeline
-Available at: [Your repository URL]
-Accessed: [Date]
-```
-
-### Data Sources
-
-- **NCBI GenBank**: https://www.ncbi.nlm.nih.gov/genbank/
-- **Nucleotide Database**: https://www.ncbi.nlm.nih.gov/nucleotide/
-
-### NCBI Usage Guidelines
-
-- Always provide a valid email address for NCBI Entrez
-- Respect rate limits (implemented in the pipeline)
-- Follow NCBI's terms of service for data usage
-
-## Contributing
-
-To contribute to this pipeline:
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-### Bug Reports
-
-Please report bugs with:
-
-- Pipeline version
-- Error messages
-- Log file contents
-- System information
 
 ## License
 
-This pipeline is released under the MIT License. See LICENSE file for details.
-
-## Support
-
-For support and questions:
-
-- Check the troubleshooting section above
-- Review the log files for error details
-- Open an issue in the repository
-
-## Changelog
-
-### Version 1.0.0
-
-- Initial release
-- NCBI search and download functionality
-- Basic genome analysis
-- Visualization generation
-- Configuration system
+MIT
