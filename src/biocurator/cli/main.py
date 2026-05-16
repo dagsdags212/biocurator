@@ -39,6 +39,7 @@ class DatabaseType(str, Enum):
 
 
 from biocurator.cli.commands.init import init_command
+from biocurator.cli.commands.run import run_command
 
 app = typer.Typer(
     name="biocurator",
@@ -49,6 +50,7 @@ app = typer.Typer(
 )
 
 app.command("init")(init_command)
+app.command("run")(run_command)
 
 
 # Utility functions for rich output
