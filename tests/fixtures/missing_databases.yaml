@@ -1,0 +1,8 @@
+email: test@example.com
+
+jobs:
+  job1:
+    search:
+      organism: "E. coli"
+    filter: {}
+    export: {}

@@ -1,0 +1,6 @@
+jobs:
+  job1:
+    search:
+      databases: [ncbi]
+    filter: {}
+    export: {}

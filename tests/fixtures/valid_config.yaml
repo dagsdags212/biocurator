@@ -1,0 +1,25 @@
+email: test@example.com
+
+jobs:
+  covid-genomes:
+    search:
+      databases: [ncbi]
+      organism: "SARS-CoV-2"
+      sequence_type: nucleotide
+      keywords: ["complete genome"]
+      max_results: 10
+    filter:
+      min_length: 29000
+      quality_threshold: 0.8
+    export:
+      outdir: results/covid
+      formats: [fasta, csv]
+      prefix: covid
+
+  spike-proteins:
+    search:
+      databases: [uniprot]
+      organism: "SARS-CoV-2"
+      sequence_type: protein
+    filter: {}
+    export: {}
