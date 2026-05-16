@@ -16,7 +16,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.prompt import Prompt, Confirm
-from biocurator.utils.logging import get_logger
+from biocurator.utils.logging import get_logger, enable_verbose_logging
 
 
 console = Console()
@@ -40,6 +40,14 @@ class DatabaseType(str, Enum):
 
 from biocurator.cli.commands.init import init_command
 from biocurator.cli.commands.run import run_command
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        from biocurator import __version__
+
+        rprint(f"Biocurator [bold green]{__version__}[/bold green]")
+        raise typer.Exit()
 
 app = typer.Typer(
     name="biocurator",
@@ -82,10 +90,16 @@ def print_header(title: str):
 @app.callback()
 def main(
     debug: Annotated[
-        bool, typer.Option("--debug", help="Enable debug logging")
+        bool, typer.Option("--debug", help="Print log messages to stdout")
     ] = False,
     version: Annotated[
-        bool, typer.Option("--version", help="Show version and exit")
+        bool,
+        typer.Option(
+            "--version",
+            help="Show version and exit",
+            callback=_version_callback,
+            is_eager=True,
+        ),
     ] = False,
 ):
     """
@@ -95,12 +109,6 @@ def main(
     from multiple databases including NCBI and UniProt.
 
     """
-    if version:
-        from biocurator import __version__
-
-        rprint(f"BioCurator version [bold green]{__version__}[/bold green]")
-        raise typer.Exit()
-
     if debug:
-        setup_development_logging()
+        enable_verbose_logging()
         print_info("Debug logging enabled")

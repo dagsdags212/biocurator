@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `--debug` global flag on `biocurator` — enables INFO-level stdout logging via
+  `enable_verbose_logging()` across all subcommands.
 - `--verbose` / `-v` flag on `biocurator run` — attaches an INFO-level handler
   to the root logger so progress messages are printed during a run.
   Format: `YYYY-MM-DD HH:MM:SS  LEVEL     message`.
@@ -23,6 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `--version` flag now correctly prints the current version and exits when
+  invoked without a subcommand; previously `no_args_is_help=True` caused Typer
+  to show help instead of running the callback. Fixed by attaching a Click-level
+  `callback` with `is_eager=True` directly to the option so it fires at parse
+  time before command dispatch.
+- `--debug` flag now uses `enable_verbose_logging()` instead of
+  `setup_development_logging()`, preventing the same Rich progress bar overlap
+  that was fixed for `--verbose`.
 - `NCBISearcher.fetch_metadata` stored sequence length under `"length"` but
   `SequenceFilter.filter_by_criteria` checked `"sequence_length"`, causing every
   sequence to evaluate as length 0 and be dropped by any `min_length`/`max_length`
