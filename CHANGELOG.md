@@ -13,9 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `--debug` global flag on `biocurator` — enables INFO-level stdout logging via
   `enable_verbose_logging()` across all subcommands.
-- `--outdir` / `-o` option on `biocurator run` — overrides the `export.outdir`
-  of every selected job, allowing the output directory to be set from the CLI
-  without editing the config file.
 - `--verbose` / `-v` flag on `biocurator run` — attaches an INFO-level handler
   to the root logger so progress messages are printed during a run.
   Format: `YYYY-MM-DD HH:MM:SS  LEVEL     message`.
