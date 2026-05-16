@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-05-16
+
+### Fixed
+
+- `NCBISearcher.fetch_metadata` stored sequence length under `"length"` but
+  `SequenceFilter.filter_by_criteria` checked `"sequence_length"`, causing every
+  sequence to evaluate as length 0 and be dropped by any `min_length`/`max_length`
+  filter. Renamed the key to `"sequence_length"` to match the filter.
+
 ## [0.1.0] - 2026-05-16
 
 ### Added
@@ -31,5 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Extraction logic specific to ASFV genomes (now superseded by the generic config-driven pipeline)
 
-[Unreleased]: https://github.com/dagsdags212/biocurator/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/dagsdags212/biocurator/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/dagsdags212/biocurator/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/dagsdags212/biocurator/releases/tag/v0.1.0
