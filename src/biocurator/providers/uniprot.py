@@ -3,6 +3,8 @@ from io import StringIO
 from pathlib import Path
 from typing import Any
 
+import requests
+
 from Bio import SeqIO
 
 from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, SearchCriteria
@@ -16,6 +18,7 @@ class UniProtSearcher(DatabaseSearcher):
     def __init__(self, config: DatabaseConfig, email: str) -> None:
         super().__init__(config, email)
         self._base_url = "https://rest.uniprot.org"
+        self.session = requests.Session()
 
     def build_query(self, criteria: SearchCriteria) -> str:
         parts = []

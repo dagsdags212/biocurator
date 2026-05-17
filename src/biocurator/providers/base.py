@@ -32,10 +32,8 @@ class DatabaseConfig:
 
 class DatabaseSearcher(ABC):
     def __init__(self, config: DatabaseConfig, email: str) -> None:
-        import requests
         self.config = config
         self.email = email
-        self.session = requests.Session()
 
     @abstractmethod
     def build_query(self, criteria: SearchCriteria) -> str:

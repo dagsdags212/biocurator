@@ -88,7 +88,7 @@ def test_database_searcher_cannot_be_instantiated_directly():
         DatabaseSearcher(DatabaseConfig(name="x"), "a@b.com")  # type: ignore[abstract]
 
 
-def test_database_searcher_concrete_subclass_exposes_session():
+def test_database_searcher_concrete_subclass_sets_config_and_email():
     class _Concrete(DatabaseSearcher):
         def build_query(self, criteria: SearchCriteria) -> str:
             return ""
@@ -102,4 +102,4 @@ def test_database_searcher_concrete_subclass_exposes_session():
     s = _Concrete(DatabaseConfig(name="x"), "user@example.com")
     assert s.email == "user@example.com"
     assert s.config.name == "x"
-    assert s.session is not None
+    assert not hasattr(s, "session")
