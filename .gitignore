@@ -9,6 +9,12 @@ wheels/
 # Virtual environments
 .venv
 
+# Design docs
+docs/
+
+# Worktrees
+.worktrees/
+
 # Data and log files
 *.log
 *.fasta
