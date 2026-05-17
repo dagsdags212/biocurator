@@ -26,6 +26,7 @@ Usage:
 © Jan Emmanuel Samson (2026-)
 """
 
+import functools
 import logging
 import logging.handlers
 import sys
@@ -367,6 +368,7 @@ def get_performance_logger(name: str) -> PerformanceLogger:
 def log_function_call(func):
     """Decorator to log function calls with parameters and execution time."""
 
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         logger = get_logger(func.__module__)
         perf_logger = get_performance_logger(func.__module__)
