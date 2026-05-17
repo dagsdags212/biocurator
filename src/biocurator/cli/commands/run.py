@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Annotated, Optional
 import typer
-from rich.console import Console
+from biocurator.cli.main import console
 from rich.progress import (
     Progress,
     SpinnerColumn,
@@ -42,8 +42,6 @@ def run_command(
     ] = False,
 ):
     """Run curation jobs defined in a YAML config file."""
-    console = Console()
-
     if verbose:
         enable_verbose_logging(console=console)
 
