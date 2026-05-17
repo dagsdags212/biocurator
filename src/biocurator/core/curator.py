@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 
-from .searchers import SearchCriteria, DatabaseConfig, NCBISearcher, UniProtSearcher
+from biocurator.providers import ProviderRegistry, DatabaseConfig, SearchCriteria
 from .filters import SequenceFilter
 from ..utils.logging import (
     get_logger,
@@ -152,35 +152,20 @@ class Biocurator:
         return config
 
     def _init_database_searchers(self):
-        """Initialize database searchers."""
         logger.info("Initializing database searchers")
-
         email = self.config.get("email")
         if not email:
-            error_msg = "Email address is required for database access"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        # Initialize NCBI searcher
-        if "ncbi" in self.config["databases"]:
+            raise ValueError("Email address is required for database access")
+        for name, db_cfg in self.config["databases"].items():
             try:
-                ncbi_config = DatabaseConfig(**self.config["databases"]["ncbi"])
-                self.searchers["ncbi"] = NCBISearcher(ncbi_config, email)
-                logger.info("NCBI searcher initialized successfully")
-            except Exception as e:
-                logger.error(f"Failed to initialize NCBI searcher: {e}")
+                config = DatabaseConfig(**db_cfg)
+                self.searchers[name] = ProviderRegistry.get(name, config, email)
+                logger.info(f"{name} searcher initialized successfully")
+            except KeyError as exc:
+                logger.warning(str(exc))
+            except Exception as exc:
+                logger.error(f"Failed to initialize {name} searcher: {exc}")
                 raise
-
-        # Initialize UniProt searcher
-        if "uniprot" in self.config["databases"]:
-            try:
-                uniprot_config = DatabaseConfig(**self.config["databases"]["uniprot"])
-                self.searchers["uniprot"] = UniProtSearcher(uniprot_config, email)
-                logger.info("UniProt searcher initialized successfully")
-            except Exception as e:
-                logger.error(f"Failed to initialize UniProt searcher: {e}")
-                raise
-
         logger.info(f"Database searchers initialized: {list(self.searchers.keys())}")
 
     def run_job(self, job_config, progress_callback=None) -> dict:
