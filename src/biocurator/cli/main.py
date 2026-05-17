@@ -8,34 +8,15 @@ This contains the code for running the Biocurator CLI
 © Jan Emmanuel Samson (2026-)
 """
 
-from typing import Annotated, Optional, List
-from enum import Enum
+from typing import Annotated
 import typer
 from rich import print as rprint
 from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-from rich.prompt import Prompt, Confirm
 from biocurator.utils.logging import get_logger, enable_verbose_logging
 
 
 console = Console()
 logger = get_logger(__name__)
-
-
-class SequenceType(str, Enum):
-    """Supported sequence types"""
-
-    nucleotide = "nucleotide"
-    protein = "protein"
-    sra = "sra"
-
-
-class DatabaseType(str, Enum):
-    """Supported database types"""
-
-    ncbi = "ncbi"
-    uniprot = "uniprot"
 
 
 from biocurator.cli.commands.init import init_command
@@ -80,11 +61,6 @@ def print_warning(message: str):
 def print_info(message: str):
     """Print info message with blue info icon."""
     rprint(f"[bold blue]ℹ️  {message}[/bold blue]")
-
-
-def print_header(title: str):
-    """Print header with panel."""
-    console.print(Panel.fit(f"[bold cyan]{title}[/bold cyan]", border_style="cyan"))
 
 
 @app.callback()
