@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import Annotated, Optional
 import typer
 from biocurator.cli.main import console
@@ -12,11 +11,7 @@ from rich.progress import (
 from rich.table import Table
 from biocurator.config.loader import ConfigLoader
 from biocurator.core.curator import Biocurator
-from biocurator.exceptions import (
-    ConfigNotFoundError,
-    InvalidConfigError,
-    JobNotFoundError,
-)
+from biocurator.exceptions import ConfigNotFoundError, InvalidConfigError
 from biocurator.utils.logging import enable_verbose_logging
 
 
