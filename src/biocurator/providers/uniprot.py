@@ -3,7 +3,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Any
 
-import requests
+from requests import Session
 
 from Bio import SeqIO
 
@@ -15,10 +15,12 @@ logger = get_logger(__name__)
 
 
 class UniProtSearcher(DatabaseSearcher):
+    session: Session
+
     def __init__(self, config: DatabaseConfig, email: str) -> None:
         super().__init__(config, email)
         self._base_url = "https://rest.uniprot.org"
-        self.session = requests.Session()
+        self.session = Session()
 
     def build_query(self, criteria: SearchCriteria) -> str:
         parts = []
