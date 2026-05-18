@@ -162,7 +162,7 @@ class SRAQueryBuilder(QueryBuilder[NCBISearchCriteria]):
     def available_fields(self) -> dict[str, str]:
         return {
             "ALL": "All terms from all searchable fields",
-            "UID": "Unique number assigned to publication",
+            "UID": "Unique number assigned to each SRA run",
             "FILT": "Limits the records",
             "ACCN": "Accession number of sequence",
             "TITL": "Words in definition line",
@@ -218,7 +218,7 @@ class TaxonomyQueryBuilder(QueryBuilder[NCBISearchCriteria]):
         }
 
 
-_BUILDER_MAP: dict[NCBIDatabase, QueryBuilder] = {
+_BUILDER_MAP: dict[NCBIDatabase, QueryBuilder[NCBISearchCriteria]] = {
     NCBIDatabase.NUCCORE: SequenceQueryBuilder(),
     NCBIDatabase.NUCLEOTIDE: SequenceQueryBuilder(),
     NCBIDatabase.PROTEIN: SequenceQueryBuilder(),
@@ -231,7 +231,7 @@ _BUILDER_MAP: dict[NCBIDatabase, QueryBuilder] = {
 }
 
 
-def get_builder(db: NCBIDatabase) -> QueryBuilder:
+def get_builder(db: NCBIDatabase) -> QueryBuilder[NCBISearchCriteria]:
     builder = _BUILDER_MAP.get(db)
     if builder is None:
         raise ValueError(f"No QueryBuilder registered for {db!r}")
