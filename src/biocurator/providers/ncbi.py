@@ -17,6 +17,8 @@ class NCBISearcher(DatabaseSearcher):
         super().__init__(config, email)
         Entrez.email = email
         Entrez.tool = "Biocurator"
+        if config.api_key:
+            Entrez.api_key = config.api_key
         self._db_mapping = {
             "nucleotide": "nucleotide",
             "protein": "protein",
