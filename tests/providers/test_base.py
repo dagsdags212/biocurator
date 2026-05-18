@@ -3,10 +3,10 @@ from biocurator.providers.base import (
     SearchCriteria,
     DatabaseConfig,
     DatabaseSearcher,
+    SequenceRecord,
 )
 from abc import ABC
 from pathlib import Path
-from typing import Any
 
 
 def test_search_criteria_defaults():
@@ -94,9 +94,9 @@ def test_database_searcher_concrete_subclass_sets_config_and_email():
             return ""
         def search(self, criteria: SearchCriteria) -> list[str]:
             return []
-        def fetch_metadata(self, ids: list[str]) -> list[dict[str, Any]]:
+        def fetch_metadata(self, ids: list[str]) -> list[SequenceRecord]:
             return []
-        def download(self, ids: list[str], outdir: Path) -> list[dict[str, Any]]:
+        def download(self, ids: list[str], outdir: Path) -> list[SequenceRecord]:
             return []
 
     s = _Concrete(DatabaseConfig(name="x"), "user@example.com")
