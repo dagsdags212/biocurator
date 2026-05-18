@@ -1,4 +1,5 @@
 import time
+from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
 
@@ -6,11 +7,60 @@ from requests import Session
 
 from Bio import SeqIO
 
-from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, SearchCriteria, SequenceRecord
+from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, QueryBuilder, SearchCriteria, SequenceRecord
 from biocurator.providers.registry import ProviderRegistry
 from biocurator.utils.logging import get_logger
 
 logger = get_logger(__name__)
+
+
+@dataclass
+class UniProtSearchCriteria(SearchCriteria):
+    reviewed: bool | None = None
+
+
+class UniProtQueryBuilder(QueryBuilder["UniProtSearchCriteria"]):
+    def build(self, criteria: "UniProtSearchCriteria") -> str:
+        parts = []
+        if criteria.organism:
+            parts.append(f'organism:"{criteria.organism}"')
+        if criteria.keywords:
+            parts.append("(" + " OR ".join(criteria.keywords) + ")")
+        if criteria.min_length:
+            parts.append(f"length:[{criteria.min_length} TO *]")
+        if criteria.max_length:
+            parts.append(f"length:[* TO {criteria.max_length}]")
+        if criteria.reviewed is not None:
+            parts.append(f"reviewed:{'true' if criteria.reviewed else 'false'}")
+        return " AND ".join(parts)
+
+    def available_fields(self) -> dict[str, str]:
+        return {
+            "accession": "UniProtKB accession number",
+            "id": "UniProtKB entry name",
+            "organism_name": "Scientific name of the organism",
+            "organism_id": "NCBI taxonomy identifier",
+            "gene_names": "Gene name(s)",
+            "protein_name": "Recommended protein name",
+            "length": "Sequence length in amino acids",
+            "reviewed": "Reviewed (Swiss-Prot) or unreviewed (TrEMBL)",
+            "keyword": "UniProt controlled vocabulary keyword",
+            "go": "Gene Ontology term",
+            "ec": "Enzyme Commission number",
+            "ft_sites": "Annotated sites (active site, binding site, etc.)",
+            "database": "Cross-references to external databases",
+            "date_created": "Date the entry was created",
+            "date_modified": "Date the entry was last modified",
+            "date_sequence_modified": "Date the sequence was last modified",
+            "mass": "Molecular mass in Daltons",
+            "cc_subcellular_location": "Subcellular location",
+            "cc_tissue_specificity": "Tissue specificity",
+            "cc_disease": "Disease involvement",
+            "taxonomy_id": "Taxonomic lineage identifier",
+            "lineage": "Full taxonomic lineage",
+            "strain": "Organism strain",
+            "fragment": "Whether sequence is a fragment",
+        }
 
 
 class UniProtSearcher(DatabaseSearcher):
@@ -21,19 +71,10 @@ class UniProtSearcher(DatabaseSearcher):
         self._base_url = "https://rest.uniprot.org"
         self.session = Session()
 
-    def build_query(self, criteria: SearchCriteria) -> str:
-        parts = []
-        if criteria.organism:
-            parts.append(f'organism:"{criteria.organism}"')
-        if criteria.keywords:
-            parts.append("(" + " OR ".join(criteria.keywords) + ")")
-        if criteria.min_length:
-            parts.append(f"length:[{criteria.min_length} TO *]")
-        if criteria.max_length:
-            parts.append(f"length:[* TO {criteria.max_length}]")
-        return " AND ".join(parts)
+    def build_query(self, criteria: UniProtSearchCriteria) -> str:  # type: ignore[override]
+        return UniProtQueryBuilder().build(criteria)
 
-    def search(self, criteria: SearchCriteria) -> list[str]:
+    def search(self, criteria: UniProtSearchCriteria) -> list[str]:  # type: ignore[override]
         logger.info("Searching UniProt database...")
         query = self.build_query(criteria)
         try:
