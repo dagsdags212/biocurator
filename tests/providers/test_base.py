@@ -7,11 +7,31 @@ from biocurator.providers.base import (
 )
 from abc import ABC
 from pathlib import Path
+from biocurator.providers.base import QueryBuilder
+
+
+def test_search_criteria_has_no_sequence_type():
+    c = SearchCriteria()
+    assert not hasattr(c, "sequence_type")
+
+
+def test_search_criteria_has_no_taxonomy_filter():
+    c = SearchCriteria()
+    assert not hasattr(c, "taxonomy_filter")
+
+
+def test_search_criteria_has_no_location():
+    c = SearchCriteria()
+    assert not hasattr(c, "location")
+
+
+def test_query_builder_is_abstract():
+    import inspect
+    assert inspect.isabstract(QueryBuilder)
 
 
 def test_search_criteria_defaults():
     c = SearchCriteria()
-    assert c.sequence_type == "nucleotide"
     assert c.max_results == 100
     assert c.keywords == []
 
@@ -23,28 +43,24 @@ def test_search_criteria_exclude_terms_defaults_to_empty_list():
 
 def test_search_criteria_optional_fields_are_none_by_default():
     c = SearchCriteria()
-    for field in ("organism", "location", "min_length", "max_length",
-                  "start_date", "end_date", "taxonomy_filter", "quality_threshold"):
+    for field in ("organism", "min_length", "max_length",
+                  "start_date", "end_date", "quality_threshold"):
         assert getattr(c, field) is None
 
 
 def test_search_criteria_all_fields_settable():
     c = SearchCriteria(
         organism="Homo sapiens",
-        sequence_type="protein",
         keywords=["kinase"],
-        location="Europe",
         min_length=50,
         max_length=1000,
         start_date="2020/01/01",
         end_date="2024/12/31",
         max_results=50,
         exclude_terms=["predicted"],
-        taxonomy_filter="Mammalia",
         quality_threshold=0.9,
     )
     assert c.organism == "Homo sapiens"
-    assert c.sequence_type == "protein"
     assert c.max_results == 50
     assert c.quality_threshold == 0.9
 
