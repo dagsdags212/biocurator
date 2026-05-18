@@ -12,17 +12,16 @@ from biocurator.providers.registry import ProviderRegistry
 from biocurator.providers.uniprot import UniProtQueryBuilder, UniProtSearchCriteria
 
 import biocurator.providers.ncbi      # registers "ncbi"
-import biocurator.providers.uniprot   # registers "uniprot"
 
 __all__ = [
     "DatabaseConfig",
     "DatabaseSearcher",
     "NCBIDatabase",
     "NCBISearchCriteria",
+    "ProviderRegistry",
     "QueryBuilder",
     "SearchCriteria",
     "SequenceRecord",
-    "ProviderRegistry",
     "UniProtQueryBuilder",
     "UniProtSearchCriteria",
     "get_builder",
