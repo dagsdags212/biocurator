@@ -3,7 +3,7 @@ from pathlib import Path
 
 from Bio import Entrez, SeqIO
 
-from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, SearchCriteria, SequenceRecord
+from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, NCBIDatabase, SequenceRecord
 from biocurator.providers.ncbi_criteria import NCBISearchCriteria
 from biocurator.providers.ncbi_query_builders import get_builder
 from biocurator.providers.registry import ProviderRegistry
@@ -40,8 +40,8 @@ class NCBISearcher(DatabaseSearcher):
             logger.error(f"Error searching NCBI: {exc}")
             return []
 
-    def fetch_metadata(self, ids: list[str], criteria: NCBISearchCriteria | None = None) -> list[SequenceRecord]:  # type: ignore[override]
-        db = criteria.database if criteria else "nucleotide"
+    def fetch_metadata(self, ids: list[str], criteria: NCBISearchCriteria | None = None) -> list[SequenceRecord]:
+        db = criteria.database if criteria else NCBIDatabase.NUCCORE
         logger.info(f"Fetching metadata for {len(ids)} sequences...")
         metadata_list = []
         for i in range(0, len(ids), self.config.batch_size):
@@ -74,8 +74,8 @@ class NCBISearcher(DatabaseSearcher):
         logger.info(f"Retrieved metadata for {len(metadata_list)} sequences")
         return metadata_list
 
-    def download(self, ids: list[str], outdir: Path, criteria: NCBISearchCriteria | None = None) -> list[SequenceRecord]:  # type: ignore[override]
-        db = criteria.database if criteria else "nucleotide"
+    def download(self, ids: list[str], outdir: Path, criteria: NCBISearchCriteria | None = None) -> list[SequenceRecord]:
+        db = criteria.database if criteria else NCBIDatabase.NUCCORE
         logger.info(f"Attempting to download {len(ids)} sequences...")
         downloaded = []
         for seq_id in ids:

@@ -133,9 +133,9 @@ class DatabaseSearcher(ABC):
         """Query the database and return a list of record IDs."""
 
     @abstractmethod
-    def fetch_metadata(self, ids: list[str]) -> list[SequenceRecord]:
+    def fetch_metadata(self, ids: list[str], criteria: "SearchCriteria | None" = None) -> list[SequenceRecord]:
         """Retrieve metadata for a set of IDs."""
 
     @abstractmethod
-    def download(self, ids: list[str], outdir: Path) -> list[SequenceRecord]:
+    def download(self, ids: list[str], outdir: Path, criteria: "SearchCriteria | None" = None) -> list[SequenceRecord]:
         """Download sequences and return associated metadata."""

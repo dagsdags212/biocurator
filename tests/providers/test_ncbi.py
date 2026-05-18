@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import patch, MagicMock
 from biocurator.providers.base import DatabaseConfig
 from biocurator.providers.ncbi import NCBISearcher
 from biocurator.providers.ncbi_criteria import NCBISearchCriteria
@@ -79,5 +80,10 @@ def test_build_query_multiple_parts_joined_with_and(searcher):
 
 def test_build_query_delegates_to_builder(searcher):
     criteria = NCBISearchCriteria(organism="Mus musculus")
-    query = searcher.build_query(criteria)
-    assert '"Mus musculus"[Organism]' in query
+    mock_builder = MagicMock()
+    mock_builder.build.return_value = "mocked_query"
+    with patch("biocurator.providers.ncbi.get_builder", return_value=mock_builder) as mock_get:
+        result = searcher.build_query(criteria)
+        mock_get.assert_called_once_with(criteria.database)
+        mock_builder.build.assert_called_once_with(criteria)
+        assert result == "mocked_query"
