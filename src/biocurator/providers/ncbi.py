@@ -12,7 +12,7 @@ from biocurator.utils.logging import get_logger
 logger = get_logger(__name__)
 
 
-class NCBISearcher(DatabaseSearcher):
+class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
     def __init__(self, config: DatabaseConfig, email: str) -> None:
         super().__init__(config, email)
         Entrez.email = email
@@ -20,10 +20,10 @@ class NCBISearcher(DatabaseSearcher):
         if config.api_key:
             Entrez.api_key = config.api_key
 
-    def build_query(self, criteria: NCBISearchCriteria) -> str:  # type: ignore[override]
+    def build_query(self, criteria: NCBISearchCriteria) -> str:
         return get_builder(criteria.database).build(criteria)
 
-    def search(self, criteria: NCBISearchCriteria) -> list[str]:  # type: ignore[override]
+    def search(self, criteria: NCBISearchCriteria) -> list[str]:
         logger.info(f"Searching NCBI {criteria.database} database...")
         query = self.build_query(criteria)
         logger.info(f"Search query: {query}")

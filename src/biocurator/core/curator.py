@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Optional
 
 from biocurator.providers import ProviderRegistry, DatabaseConfig, SearchCriteria
+from biocurator.providers.ncbi_criteria import NCBISearchCriteria
+from biocurator.providers.uniprot import UniProtSearchCriteria
 from .filters import SequenceFilter
 from ..utils.logging import get_logger
 
@@ -90,16 +92,13 @@ class Biocurator:
             search_cfg = job_config.search
             filter_cfg = job_config.filter
 
-            criteria = SearchCriteria(
+            common_kwargs = dict(
                 organism=search_cfg.organism,
-                sequence_type=search_cfg.sequence_type,
                 keywords=search_cfg.keywords,
-                location=search_cfg.location,
                 min_length=filter_cfg.min_length,
                 max_length=filter_cfg.max_length,
                 max_results=search_cfg.max_results,
                 exclude_terms=filter_cfg.exclude_terms,
-                taxonomy_filter=search_cfg.taxonomy_filter,
                 quality_threshold=filter_cfg.quality_threshold,
                 start_date=search_cfg.date_range.get("start")
                 if search_cfg.date_range
@@ -108,6 +107,15 @@ class Biocurator:
                 if search_cfg.date_range
                 else None,
             )
+            if db_name == "ncbi":
+                from biocurator.providers.ncbi_criteria import NCBIDatabase as _NCBIDb
+                criteria = NCBISearchCriteria(
+                    database=_NCBIDb.NUCCORE, **common_kwargs
+                )
+            elif db_name == "uniprot":
+                criteria = UniProtSearchCriteria(**common_kwargs)
+            else:
+                criteria = SearchCriteria(**common_kwargs)
 
             ids = searcher.search(criteria)
             _report("search", len(ids), len(ids))

@@ -9,7 +9,7 @@ from biocurator.providers.base import (
 from biocurator.providers.ncbi_criteria import NCBISearchCriteria
 from biocurator.providers.ncbi_query_builders import get_builder
 from biocurator.providers.registry import ProviderRegistry
-from biocurator.providers.uniprot import UniProtQueryBuilder, UniProtSearchCriteria
+from biocurator.providers.uniprot import UniProtQueryBuilder, UniProtSearchCriteria, UniProtSearcher
 
 import biocurator.providers.ncbi      # registers "ncbi"
 
@@ -24,5 +24,6 @@ __all__ = [
     "SequenceRecord",
     "UniProtQueryBuilder",
     "UniProtSearchCriteria",
+    "UniProtSearcher",
     "get_builder",
 ]

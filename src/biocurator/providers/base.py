@@ -65,6 +65,7 @@ class NCBIDatabase(StrEnum):
 
 
 T = TypeVar("T", bound="SearchCriteria")
+C = TypeVar("C", bound="SearchCriteria")
 
 
 @dataclass
@@ -119,23 +120,23 @@ class SequenceRecord:
     quality_score: float | None = None
 
 
-class DatabaseSearcher(ABC):
+class DatabaseSearcher(ABC, Generic[C]):
     def __init__(self, config: DatabaseConfig, email: str) -> None:
         self.config = config
         self.email = email
 
     @abstractmethod
-    def build_query(self, criteria: SearchCriteria) -> str:
+    def build_query(self, criteria: C) -> str:
         """Translate SearchCriteria into a database-specific query string."""
 
     @abstractmethod
-    def search(self, criteria: SearchCriteria) -> list[str]:
+    def search(self, criteria: C) -> list[str]:
         """Query the database and return a list of record IDs."""
 
     @abstractmethod
-    def fetch_metadata(self, ids: list[str], criteria: "SearchCriteria | None" = None) -> list[SequenceRecord]:
+    def fetch_metadata(self, ids: list[str], criteria: C | None = None) -> list[SequenceRecord]:
         """Retrieve metadata for a set of IDs."""
 
     @abstractmethod
-    def download(self, ids: list[str], outdir: Path, criteria: "SearchCriteria | None" = None) -> list[SequenceRecord]:
+    def download(self, ids: list[str], outdir: Path, criteria: C | None = None) -> list[SequenceRecord]:
         """Download sequences and return associated metadata."""

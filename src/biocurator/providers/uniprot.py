@@ -19,8 +19,8 @@ class UniProtSearchCriteria(SearchCriteria):
     reviewed: bool | None = None
 
 
-class UniProtQueryBuilder(QueryBuilder["UniProtSearchCriteria"]):
-    def build(self, criteria: "UniProtSearchCriteria") -> str:
+class UniProtQueryBuilder(QueryBuilder[UniProtSearchCriteria]):
+    def build(self, criteria: UniProtSearchCriteria) -> str:
         parts = []
         if criteria.organism:
             parts.append(f'organism:"{criteria.organism}"')
@@ -63,7 +63,7 @@ class UniProtQueryBuilder(QueryBuilder["UniProtSearchCriteria"]):
         }
 
 
-class UniProtSearcher(DatabaseSearcher):
+class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
     session: Session
 
     def __init__(self, config: DatabaseConfig, email: str) -> None:
@@ -71,10 +71,10 @@ class UniProtSearcher(DatabaseSearcher):
         self._base_url = "https://rest.uniprot.org"
         self.session = Session()
 
-    def build_query(self, criteria: UniProtSearchCriteria) -> str:  # type: ignore[override]
+    def build_query(self, criteria: UniProtSearchCriteria) -> str:
         return UniProtQueryBuilder().build(criteria)
 
-    def search(self, criteria: UniProtSearchCriteria) -> list[str]:  # type: ignore[override]
+    def search(self, criteria: UniProtSearchCriteria) -> list[str]:
         logger.info("Searching UniProt database...")
         query = self.build_query(criteria)
         try:
@@ -95,7 +95,7 @@ class UniProtSearcher(DatabaseSearcher):
             logger.error(f"Error searching UniProt: {exc}")
             return []
 
-    def fetch_metadata(self, ids: list[str], criteria: SearchCriteria | None = None) -> list[SequenceRecord]:
+    def fetch_metadata(self, ids: list[str], criteria: UniProtSearchCriteria | None = None) -> list[SequenceRecord]:
         logger.info(f"Fetching UniProt metadata for {len(ids)} entries...")
         metadata_list = []
         batch_size = min(self.config.batch_size, 25)
@@ -132,7 +132,7 @@ class UniProtSearcher(DatabaseSearcher):
         logger.info(f"Retrieved metadata for {len(metadata_list)} UniProt entries")
         return metadata_list
 
-    def download(self, ids: list[str], outdir: Path, criteria: SearchCriteria | None = None) -> list[SequenceRecord]:
+    def download(self, ids: list[str], outdir: Path, criteria: UniProtSearchCriteria | None = None) -> list[SequenceRecord]:
         logger.info(f"Attempting to download {len(ids)} UniProt sequences...")
         downloaded = []
         for uid in ids:
