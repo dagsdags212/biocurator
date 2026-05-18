@@ -95,7 +95,7 @@ class UniProtSearcher(DatabaseSearcher):
             logger.error(f"Error searching UniProt: {exc}")
             return []
 
-    def fetch_metadata(self, ids: list[str]) -> list[SequenceRecord]:
+    def fetch_metadata(self, ids: list[str], criteria: SearchCriteria | None = None) -> list[SequenceRecord]:
         logger.info(f"Fetching UniProt metadata for {len(ids)} entries...")
         metadata_list = []
         batch_size = min(self.config.batch_size, 25)
@@ -132,7 +132,7 @@ class UniProtSearcher(DatabaseSearcher):
         logger.info(f"Retrieved metadata for {len(metadata_list)} UniProt entries")
         return metadata_list
 
-    def download(self, ids: list[str], outdir: Path) -> list[SequenceRecord]:
+    def download(self, ids: list[str], outdir: Path, criteria: SearchCriteria | None = None) -> list[SequenceRecord]:
         logger.info(f"Attempting to download {len(ids)} UniProt sequences...")
         downloaded = []
         for uid in ids:
