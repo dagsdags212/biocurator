@@ -1,13 +1,12 @@
 import time
 from io import StringIO
 from pathlib import Path
-from typing import Any
 
 from requests import Session
 
 from Bio import SeqIO
 
-from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, SearchCriteria
+from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, SearchCriteria, SequenceRecord
 from biocurator.providers.registry import ProviderRegistry
 from biocurator.utils.logging import get_logger
 
@@ -55,7 +54,7 @@ class UniProtSearcher(DatabaseSearcher):
             logger.error(f"Error searching UniProt: {exc}")
             return []
 
-    def fetch_metadata(self, ids: list[str]) -> list[dict[str, Any]]:
+    def fetch_metadata(self, ids: list[str]) -> list[SequenceRecord]:
         logger.info(f"Fetching UniProt metadata for {len(ids)} entries...")
         metadata_list = []
         batch_size = min(self.config.batch_size, 25)
@@ -75,24 +74,24 @@ class UniProtSearcher(DatabaseSearcher):
                 for line in lines[1:]:
                     values = line.split("\t")
                     if len(values) >= len(headers):
-                        metadata_list.append({
-                            "id": values[0],
-                            "accession": values[0],
-                            "title": values[2] if len(values) > 2 else "",
-                            "organism": values[3] if len(values) > 3 else "",
-                            "sequence_length": int(values[4]) if len(values) > 4 and values[4].isdigit() else 0,
-                            "create_date": values[5] if len(values) > 5 else "",
-                            "update_date": values[6] if len(values) > 6 else "",
-                            "taxonomy_id": values[7] if len(values) > 7 else "",
-                            "database": "UniProt",
-                        })
+                        metadata_list.append(SequenceRecord(
+                            id=values[0],
+                            accession=values[0],
+                            title=values[2] if len(values) > 2 else "",
+                            organism=values[3] if len(values) > 3 else "",
+                            sequence_length=int(values[4]) if len(values) > 4 and values[4].isdigit() else 0,
+                            create_date=values[5] if len(values) > 5 else "",
+                            update_date=values[6] if len(values) > 6 else "",
+                            taxonomy_id=values[7] if len(values) > 7 else "",
+                            database="UniProt",
+                        ))
                 time.sleep(self.config.rate_limit)
             except Exception as exc:
                 logger.warning(f"Error fetching UniProt metadata for batch {i // batch_size + 1}: {exc}")
         logger.info(f"Retrieved metadata for {len(metadata_list)} UniProt entries")
         return metadata_list
 
-    def download(self, ids: list[str], outdir: Path) -> list[dict[str, Any]]:
+    def download(self, ids: list[str], outdir: Path) -> list[SequenceRecord]:
         logger.info(f"Attempting to download {len(ids)} UniProt sequences...")
         downloaded = []
         for uid in ids:
@@ -101,14 +100,15 @@ class UniProtSearcher(DatabaseSearcher):
                 response = self.session.get(url, timeout=self.config.timeout)
                 response.raise_for_status()
                 record = SeqIO.read(StringIO(response.text), "fasta")
-                downloaded.append({
-                    "id": uid,
-                    "accession": record.id,
-                    "description": record.description,
-                    "sequence_length": len(record.seq),
-                    "sequence": str(record.seq),
-                    "downloaded": True,
-                })
+                downloaded.append(SequenceRecord(
+                    id=uid,
+                    accession=record.id,
+                    description=record.description,
+                    sequence_length=len(record.seq),
+                    sequence=str(record.seq),
+                    database="UniProt",
+                    downloaded=True,
+                ))
                 logger.debug(f"Downloaded {record.id} ({len(record.seq)} aa)")
                 time.sleep(self.config.rate_limit)
             except Exception as exc:

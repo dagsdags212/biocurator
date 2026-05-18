@@ -1,11 +1,10 @@
 import time
 from io import StringIO
 from pathlib import Path
-from typing import Any
 
 from Bio import Entrez, SeqIO
 
-from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, SearchCriteria
+from biocurator.providers.base import DatabaseConfig, DatabaseSearcher, SearchCriteria, SequenceRecord
 from biocurator.providers.registry import ProviderRegistry
 from biocurator.utils.logging import get_logger
 
@@ -66,7 +65,7 @@ class NCBISearcher(DatabaseSearcher):
             logger.error(f"Error searching NCBI: {exc}")
             return []
 
-    def fetch_metadata(self, ids: list[str]) -> list[dict[str, Any]]:
+    def fetch_metadata(self, ids: list[str]) -> list[SequenceRecord]:
         logger.info(f"Fetching metadata for {len(ids)} sequences...")
         metadata_list = []
         for i in range(0, len(ids), self.config.batch_size):
@@ -76,26 +75,26 @@ class NCBISearcher(DatabaseSearcher):
                 summaries = Entrez.read(handle)
                 handle.close()
                 for s in summaries:
-                    metadata_list.append({
-                        "id": s.get("Id", ""),
-                        "accession": s.get("AccessionVersion", ""),
-                        "title": s.get("Title", ""),
-                        "organism": s.get("Organism", ""),
-                        "sequence_length": int(s.get("Length", 0)),
-                        "create_date": s.get("CreateDate", ""),
-                        "update_date": s.get("UpdateDate", ""),
-                        "authors": s.get("AuthorList", ""),
-                        "journal": s.get("Source", ""),
-                        "taxonomy_id": s.get("TaxId", ""),
-                        "database": "NCBI",
-                    })
+                    metadata_list.append(SequenceRecord(
+                        id=str(s.get("Id", "")),
+                        accession=str(s.get("AccessionVersion", "")),
+                        title=str(s.get("Title", "")),
+                        organism=str(s.get("Organism", "")),
+                        sequence_length=int(s.get("Length", 0)),
+                        create_date=str(s.get("CreateDate", "")),
+                        update_date=str(s.get("UpdateDate", "")),
+                        authors=str(s.get("AuthorList", "")),
+                        journal=str(s.get("Source", "")),
+                        taxonomy_id=str(s.get("TaxId", "")),
+                        database="NCBI",
+                    ))
                 time.sleep(self.config.rate_limit)
             except Exception as exc:
                 logger.warning(f"Error fetching metadata for batch {i // self.config.batch_size + 1}: {exc}")
         logger.info(f"Retrieved metadata for {len(metadata_list)} sequences")
         return metadata_list
 
-    def download(self, ids: list[str], outdir: Path) -> list[dict[str, Any]]:
+    def download(self, ids: list[str], outdir: Path) -> list[SequenceRecord]:
         logger.info(f"Attempting to download {len(ids)} sequences...")
         downloaded = []
         for seq_id in ids:
@@ -103,14 +102,15 @@ class NCBISearcher(DatabaseSearcher):
                 handle = Entrez.efetch(db="nucleotide", id=seq_id, rettype="fasta", retmode="text")
                 record = SeqIO.read(handle, "fasta")
                 handle.close()
-                downloaded.append({
-                    "id": seq_id,
-                    "accession": record.id,
-                    "description": record.description,
-                    "sequence_length": len(record.seq),
-                    "sequence": str(record.seq),
-                    "downloaded": True,
-                })
+                downloaded.append(SequenceRecord(
+                    id=seq_id,
+                    accession=record.id,
+                    description=record.description,
+                    sequence_length=len(record.seq),
+                    sequence=str(record.seq),
+                    database="NCBI",
+                    downloaded=True,
+                ))
                 logger.debug(f"Downloaded {record.id} ({len(record.seq)} bp)")
                 time.sleep(self.config.rate_limit)
             except Exception as exc:

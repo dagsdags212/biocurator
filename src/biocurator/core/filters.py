@@ -9,7 +9,8 @@ based on various criteria such as length, quality, organism, location, etc.
 © Jan Emmanuel Samson (2026-)
 """
 
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
+from biocurator.providers.base import SequenceRecord
 from biocurator.utils.logging import get_logger
 
 logger = get_logger(__name__)
@@ -20,20 +21,20 @@ class SequenceFilter:
 
     @staticmethod
     def filter_by_criteria(
-        sequences: List[Dict[str, Any]], criteria
-    ) -> List[Dict[str, Any]]:
+        sequences: List[SequenceRecord], criteria
+    ) -> List[SequenceRecord]:
         """Apply filtering criteria to a sequence set
 
         Parameters
         ----------
-        sequences : List[Dict[str, Any]]
-            List of sequence dictionaries to filter
+        sequences : List[SequenceRecord]
+            List of SequenceRecord objects to filter
         criteria : SearchCriteria
             Search criteria containing filter parameters
 
         Returns
         -------
-        List[Dict[str, Any]]
+        List[SequenceRecord]
             Filtered list of sequences
         """
         logger.info("Applying additional filters...")
@@ -46,7 +47,7 @@ class SequenceFilter:
             filtered = [
                 s
                 for s in filtered
-                if s.get("sequence_length", 0) >= criteria.min_length
+                if s.sequence_length >= criteria.min_length
             ]
             logger.info(
                 f"Length filter (min {criteria.min_length}): {len(filtered)} sequences remain"
@@ -56,7 +57,7 @@ class SequenceFilter:
             filtered = [
                 s
                 for s in filtered
-                if s.get("sequence_length", 0) <= criteria.max_length
+                if s.sequence_length <= criteria.max_length
             ]
             logger.info(
                 f"Length filter (max {criteria.max_length}): {len(filtered)} sequences remain"
@@ -65,10 +66,10 @@ class SequenceFilter:
         # Organism filter — only runs when records carry a populated organism field.
         # NCBI esummary doesn't include an Organism field, so records fetched at the
         # metadata stage will have organism="" and would be incorrectly rejected.
-        if criteria.organism and filtered and filtered[0].get("organism"):
+        if criteria.organism and filtered and filtered[0].organism:
             organism_lower = criteria.organism.lower()
             filtered = [
-                s for s in filtered if organism_lower in s.get("organism", "").lower()
+                s for s in filtered if organism_lower in s.organism.lower()
             ]
             logger.info(f"Organism filter: {len(filtered)} sequences remain")
 
@@ -79,9 +80,7 @@ class SequenceFilter:
             ]
             new_filtered = []
             for seq in filtered:
-                title_desc = (
-                    f"{seq.get('title', '')} {seq.get('description', '')}".lower()
-                )
+                title_desc = f"{seq.title} {seq.description}".lower()
                 if any(term in title_desc for term in location_terms):
                     new_filtered.append(seq)
             filtered = new_filtered
@@ -95,7 +94,7 @@ class SequenceFilter:
                     s
                     for s in filtered
                     if exclude_lower
-                    not in f"{s.get('title', '')} {s.get('description', '')}".lower()
+                    not in f"{s.title} {s.description}".lower()
                 ]
             logger.info(f"Exclude terms filter: {len(filtered)} sequences remain")
 
@@ -103,7 +102,7 @@ class SequenceFilter:
         # sequence data (metadata-only records) would score 0.0 and be incorrectly
         # rejected.  Use SequenceFilter.apply_quality_filter() on downloaded sequences.
         if criteria.quality_threshold and filtered:
-            if any(s.get("sequence") for s in filtered):
+            if any(s.sequence for s in filtered):
                 filtered = SequenceFilter.__filter_by_quality(
                     filtered, criteria.quality_threshold
                 )
@@ -120,59 +119,59 @@ class SequenceFilter:
 
     @staticmethod
     def apply_quality_filter(
-        sequences: List[Dict[str, Any]], threshold: float
-    ) -> List[Dict[str, Any]]:
+        sequences: List[SequenceRecord], threshold: float
+    ) -> List[SequenceRecord]:
         """Apply quality filtering to downloaded sequences.
 
         Parameters
         ----------
-        sequences : List[Dict[str, Any]]
+        sequences : List[SequenceRecord]
             Sequences that include actual sequence data.
         threshold : float
             Minimum quality score (0.0–1.0).
 
         Returns
         -------
-        List[Dict[str, Any]]
+        List[SequenceRecord]
             Sequences whose quality score meets the threshold.
         """
         return SequenceFilter.__filter_by_quality(sequences, threshold)
 
     @staticmethod
     def __filter_by_quality(
-        sequences: List[Dict[str, Any]], threshold: float
-    ) -> List[Dict[str, Any]]:
+        sequences: List[SequenceRecord], threshold: float
+    ) -> List[SequenceRecord]:
         """Filter sequences by quality score.
 
         Parameters
         ----------
-        sequences : List[Dict[str, Any]]
-            List of sequence dictionaries
+        sequences : List[SequenceRecord]
+            List of SequenceRecord objects
         threshold : float
             Minimum quality threshold
 
         Returns
         -------
-        List[Dict[str, Any]]
+        List[SequenceRecord]
             Sequences passing quality filter
         """
         filtered = []
         for seq in sequences:
             quality_score = SequenceFilter.__calculate_quality_score(seq)
             if quality_score >= threshold:
-                seq["quality_score"] = quality_score
+                seq.quality_score = quality_score
                 filtered.append(seq)
 
         return filtered
 
     @staticmethod
-    def __calculate_quality_score(sequence: Dict[str, Any]) -> float:
+    def __calculate_quality_score(sequence: SequenceRecord) -> float:
         """Calculate a simple quality score for a sequence.
 
         Parameters
         ----------
-        sequence : Dict[str, Any]
-            Sequence dictionary
+        sequence : SequenceRecord
+            SequenceRecord object
 
         Returns
         -------
@@ -182,10 +181,10 @@ class SequenceFilter:
         score = 1.0
 
         # Check for sequence
-        if not sequence.get("sequence"):
+        if not sequence.sequence:
             return 0.0
 
-        seq_str = sequence["sequence"].upper()
+        seq_str = sequence.sequence.upper()
 
         # Penalize for high N content (nucleotide sequences)
         if any(base in seq_str for base in "ATGC"):
@@ -198,10 +197,10 @@ class SequenceFilter:
             score -= x_content * 0.5
 
         # Bonus for having metadata
-        if sequence.get("organism"):
+        if sequence.organism:
             score += 0.1
 
-        if sequence.get("title") and len(sequence["title"]) > 10:
+        if sequence.title and len(sequence.title) > 10:
             score += 0.1
 
         # Ensure score is between 0 and 1
@@ -209,27 +208,27 @@ class SequenceFilter:
 
     @staticmethod
     def remove_duplicates(
-        sequences: List[Dict[str, Any]], by: str = "sequence"
-    ) -> List[Dict[str, Any]]:
+        sequences: List[SequenceRecord], by: str = "sequence"
+    ) -> List[SequenceRecord]:
         """Remove duplicate sequences.
 
         Parameters
         ----------
-        sequences : List[Dict[str, Any]]
-            List of sequence dictionaries
+        sequences : List[SequenceRecord]
+            List of SequenceRecord objects
         by : str
             Field to use for duplicate detection ('sequence', 'accession', etc.)
 
         Returns
         -------
-        List[Dict[str, Any]]
+        List[SequenceRecord]
             Deduplicated sequences
         """
         seen = set()
         deduplicated = []
 
         for seq in sequences:
-            key = seq.get(by)
+            key = getattr(seq, by, None)
             if key and key not in seen:
                 seen.add(key)
                 deduplicated.append(seq)
@@ -239,28 +238,28 @@ class SequenceFilter:
 
     @staticmethod
     def filter_by_taxonomy(
-        sequences: List[Dict[str, Any]], taxonomy_filter: str
-    ) -> List[Dict[str, Any]]:
+        sequences: List[SequenceRecord], taxonomy_filter: str
+    ) -> List[SequenceRecord]:
         """Filter sequences by taxonomic classification.
 
         Parameters
         ----------
-        sequences : List[Dict[str, Any]]
-            List of sequence dictionaries
+        sequences : List[SequenceRecord]
+            List of SequenceRecord objects
         taxonomy_filter : str
             Taxonomic filter term
 
         Returns
         -------
-        List[Dict[str, Any]]
+        List[SequenceRecord]
             Filtered sequences
         """
         taxonomy_lower = taxonomy_filter.lower()
         filtered = []
 
         for seq in sequences:
-            organism = seq.get("organism", "").lower()
-            title = seq.get("title", "").lower()
+            organism = seq.organism.lower()
+            title = seq.title.lower()
 
             if taxonomy_lower in organism or taxonomy_lower in title:
                 filtered.append(seq)
@@ -272,16 +271,16 @@ class SequenceFilter:
 
     @staticmethod
     def filter_by_date_range(
-        sequences: List[Dict[str, Any]],
+        sequences: List[SequenceRecord],
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> List[SequenceRecord]:
         """Filter sequences by date range.
 
         Parameters
         ----------
-        sequences : List[Dict[str, Any]]
-            List of sequence dictionaries
+        sequences : List[SequenceRecord]
+            List of SequenceRecord objects
         start_date : str, optional
             Start date in YYYY/MM/DD format
         end_date : str, optional
@@ -289,7 +288,7 @@ class SequenceFilter:
 
         Returns
         -------
-        List[Dict[str, Any]]
+        List[SequenceRecord]
             Filtered sequences
         """
         from datetime import datetime
@@ -302,7 +301,7 @@ class SequenceFilter:
                 new_filtered = []
 
                 for seq in filtered:
-                    create_date = seq.get("create_date", "")
+                    create_date = seq.create_date
                     if create_date:
                         try:
                             seq_dt = datetime.strptime(create_date, "%Y/%m/%d")
@@ -326,7 +325,7 @@ class SequenceFilter:
                 new_filtered = []
 
                 for seq in filtered:
-                    create_date = seq.get("create_date", "")
+                    create_date = seq.create_date
                     if create_date:
                         try:
                             seq_dt = datetime.strptime(create_date, "%Y/%m/%d")

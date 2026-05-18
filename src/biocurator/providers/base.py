@@ -1,8 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
-
 
 @dataclass
 class SearchCriteria:
@@ -30,6 +28,25 @@ class DatabaseConfig:
     timeout: int = 30
 
 
+@dataclass
+class SequenceRecord:
+    id: str
+    accession: str
+    database: str
+    title: str = ""
+    organism: str = ""
+    sequence_length: int = 0
+    sequence: str | None = None
+    description: str = ""
+    create_date: str = ""
+    update_date: str = ""
+    taxonomy_id: str = ""
+    authors: str = ""
+    journal: str = ""
+    downloaded: bool = False
+    quality_score: float | None = None
+
+
 class DatabaseSearcher(ABC):
     def __init__(self, config: DatabaseConfig, email: str) -> None:
         self.config = config
@@ -44,9 +61,9 @@ class DatabaseSearcher(ABC):
         """Query the database and return a list of record IDs."""
 
     @abstractmethod
-    def fetch_metadata(self, ids: list[str]) -> list[dict[str, Any]]:
+    def fetch_metadata(self, ids: list[str]) -> list[SequenceRecord]:
         """Retrieve metadata for a set of IDs."""
 
     @abstractmethod
-    def download(self, ids: list[str], outdir: Path) -> list[dict[str, Any]]:
+    def download(self, ids: list[str], outdir: Path) -> list[SequenceRecord]:
         """Download sequences and return associated metadata."""

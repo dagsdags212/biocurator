@@ -8,6 +8,7 @@ from biocurator.config.schema import (
     SearchConfig,
 )
 from biocurator.core.curator import Biocurator
+from biocurator.providers.base import SequenceRecord
 
 
 @pytest.fixture
@@ -25,16 +26,16 @@ def mock_ncbi_searcher():
     searcher = MagicMock()
     searcher.search.return_value = ["123", "456"]
     searcher.fetch_metadata.return_value = [
-        {"id": "123", "accession": "NC_000001", "sequence_length": 500, "organism": "E. coli",
-         "title": "E. coli genome", "database": "NCBI"},
-        {"id": "456", "accession": "NC_000002", "sequence_length": 200, "organism": "E. coli",
-         "title": "E. coli genome 2", "database": "NCBI"},
+        SequenceRecord(id="123", accession="NC_000001", sequence_length=500, organism="E. coli",
+                       title="E. coli genome", database="NCBI"),
+        SequenceRecord(id="456", accession="NC_000002", sequence_length=200, organism="E. coli",
+                       title="E. coli genome 2", database="NCBI"),
     ]
     searcher.download.return_value = [
-        {"id": "123", "accession": "NC_000001", "sequence": "ATGC" * 125,
-         "sequence_length": 500, "description": "E. coli", "downloaded": True},
-        {"id": "456", "accession": "NC_000002", "sequence": "ATGC" * 50,
-         "sequence_length": 200, "description": "E. coli 2", "downloaded": True},
+        SequenceRecord(id="123", accession="NC_000001", sequence="ATGC" * 125,
+                       sequence_length=500, description="E. coli", database="NCBI", downloaded=True),
+        SequenceRecord(id="456", accession="NC_000002", sequence="ATGC" * 50,
+                       sequence_length=200, description="E. coli 2", database="NCBI", downloaded=True),
     ]
     return searcher
 

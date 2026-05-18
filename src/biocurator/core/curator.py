@@ -122,7 +122,7 @@ class Biocurator:
             if not filtered_metadata:
                 continue
 
-            filtered_ids = [m["id"] for m in filtered_metadata]
+            filtered_ids = [m.id for m in filtered_metadata]
             export_dir = Path(job_config.export.outdir)
             export_dir.mkdir(parents=True, exist_ok=True)
             sequences = searcher.download(filtered_ids, export_dir)
@@ -161,13 +161,13 @@ class Biocurator:
                 fasta_file = export_dir / f"{prefix}_sequences.fasta"
                 with open(fasta_file, "w") as f:
                     for seq in self.sequences:
-                        f.write(f">{seq['accession']} {seq.get('description', '')}\n")
-                        f.write(f"{seq['sequence']}\n")
+                        f.write(f">{seq.accession} {seq.description}\n")
+                        f.write(f"{seq.sequence}\n")
                 output_files["fasta"] = fasta_file
 
             if "csv" in export_config.formats and self.metadata:
                 csv_file = export_dir / f"{prefix}_metadata.csv"
-                pd.DataFrame(self.metadata).to_csv(csv_file, index=False)
+                pd.DataFrame([vars(r) for r in self.metadata]).to_csv(csv_file, index=False)
                 output_files["csv"] = csv_file
 
             if "json" in export_config.formats and self.metadata:
@@ -175,7 +175,7 @@ class Biocurator:
 
                 json_file = export_dir / f"{prefix}_metadata.json"
                 with open(json_file, "w") as f:
-                    _json.dump(self.metadata, f, indent=2, default=str)
+                    _json.dump([vars(r) for r in self.metadata], f, indent=2, default=str)
                 output_files["json"] = json_file
 
         except OSError as exc:
