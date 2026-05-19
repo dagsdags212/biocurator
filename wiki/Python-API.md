@@ -13,6 +13,21 @@ biocurator can be used directly from Python if you want to embed curation into a
 | `ExportConfig` | `biocurator.config.schema` | Output parameters |
 | `ConfigLoader` | `biocurator.config.loader` | Loads a YAML file into a `GlobalConfig` |
 
+## Provider classes
+
+These are useful when you need query strings or search results without running the full pipeline.
+
+| Class | Import path | Purpose |
+|-------|-------------|---------|
+| `NCBIDatabase` | `biocurator.providers.base` | Enum of 39 Entrez database identifiers |
+| `NCBISearchCriteria` | `biocurator.providers.ncbi` | NCBI-specific criteria (`database`, `taxonomy_filter`, `location`) |
+| `NCBISearcher` | `biocurator.providers.ncbi` | NCBI search / metadata / download |
+| `get_builder` | `biocurator.providers.ncbi` | Factory — returns the correct `QueryBuilder` for a given `NCBIDatabase` |
+| `UniProtSearchCriteria` | `biocurator.providers.uniprot` | UniProt-specific criteria (`reviewed`) |
+| `UniProtSearcher` | `biocurator.providers.uniprot` | UniProt search / metadata / download |
+| `UniProtQueryBuilder` | `biocurator.providers.uniprot` | Builds UniProt REST query strings |
+| `SequenceRecord` | `biocurator.providers.base` | Typed record returned by `fetch_metadata` and `download` |
+
 ---
 
 ## Running a single job
@@ -99,6 +114,77 @@ selected = [j for j in config.jobs if j.name in target_names]
 for job in selected:
     output_files = curator.run_job(job)
     print(f"{job.name}: {output_files}")
+```
+
+---
+
+## Using providers directly
+
+Each database provider exposes a `QueryBuilder` you can call independently to inspect or test query construction:
+
+```python
+from biocurator.providers.ncbi import NCBISearchCriteria, get_builder
+from biocurator.providers.base import NCBIDatabase
+
+# Get the builder for a specific NCBI database
+builder = get_builder(NCBIDatabase.PUBMED)
+
+criteria = NCBISearchCriteria(
+    database=NCBIDatabase.PUBMED,
+    organism="Homo sapiens",
+    keywords=["CRISPR", "gene editing"],
+    start_date="2022/01/01",
+    end_date="2024/12/31",
+)
+
+query = builder.build(criteria)
+print(query)
+# '"Homo sapiens"[MeSH Terms] AND "CRISPR"[Title/Abstract] AND "gene editing"[Title/Abstract]
+#  AND "2022/01/01"[Date - Publication]:"2024/12/31"[Date - Publication]'
+
+# Enumerate all searchable fields for this database
+for field, description in builder.available_fields().items():
+    print(f"{field:8}  {description}")
+```
+
+For UniProt:
+
+```python
+from biocurator.providers.uniprot import UniProtQueryBuilder, UniProtSearchCriteria
+
+criteria = UniProtSearchCriteria(
+    organism="Mus musculus",
+    keywords=["kinase"],
+    reviewed=True,
+    min_length=200,
+    max_length=800,
+)
+query = UniProtQueryBuilder().build(criteria)
+print(query)
+# 'organism:"Mus musculus" AND (kinase) AND length:[200 TO *] AND length:[* TO 800] AND reviewed:true'
+```
+
+You can also retrieve `SequenceRecord` objects without going through `run_job`:
+
+```python
+from biocurator.providers.ncbi import NCBISearcher, NCBISearchCriteria
+from biocurator.providers.base import DatabaseConfig, NCBIDatabase
+
+config = DatabaseConfig(name="NCBI", rate_limit=0.34, batch_size=20)
+searcher = NCBISearcher(config, "your@email.com")
+
+criteria = NCBISearchCriteria(
+    database=NCBIDatabase.PROTEIN,
+    organism="Arabidopsis thaliana",
+    keywords=["photosynthesis"],
+    max_results=10,
+)
+
+ids = searcher.search(criteria)
+records = searcher.fetch_metadata(ids, criteria)
+
+for rec in records:
+    print(rec.accession, rec.organism, rec.sequence_length)
 ```
 
 ---

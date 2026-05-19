@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `NCBIDatabase` StrEnum in `biocurator.providers.base` — 39 Entrez database identifiers
+  grouped by category (literature, nucleotide, protein, gene, taxonomy, …). Values are valid
+  `db=` strings accepted by all Entrez endpoints.
+- `QueryBuilder[T]` abstract base class — generic strategy interface with two abstract
+  methods: `build(criteria: T) -> str` (produces the database query string) and
+  `available_fields() -> dict[str, str]` (enumerates every supported search field with a
+  human-readable description).
+- Five NCBI `QueryBuilder` implementations in `biocurator.providers.ncbi.query_builders`,
+  each tailored to a group of NCBI databases:
+  - `SequenceQueryBuilder` — nuccore, nucleotide, protein, IPG; uses `[Organism]`,
+    `[Sequence Length]`, `[Publication Date]` tags.
+  - `LiteratureQueryBuilder` — PubMed, PMC; uses `[MeSH Terms]`, `[Title/Abstract]`,
+    `[Date - Publication]`.
+  - `GeneQueryBuilder` — Gene database; uses `[Gene/Protein Name]`, `[Modification Date]`.
+  - `SRAQueryBuilder` — SRA; uses `[All Fields]`, `[Platform]`, `[Strategy]`.
+  - `TaxonomyQueryBuilder` — Taxonomy; uses `[Scientific Name]`, `[Common Name]`.
+- `get_builder(db: NCBIDatabase) -> QueryBuilder[NCBISearchCriteria]` factory in
+  `biocurator.providers.ncbi.query_builders` — returns the correct builder for a given
+  database; raises `ValueError` for unmapped databases.
+- `UniProtQueryBuilder` in `biocurator.providers.uniprot.query_builders` — builds UniProt
+  REST query strings with `organism:`, `length:`, `reviewed:` field syntax.
+- `NCBISearchCriteria(SearchCriteria)` in `biocurator.providers.ncbi.criteria` — extends
+  the base with `database: NCBIDatabase` (default `NUCCORE`), `taxonomy_filter`, and
+  `location` fields.
+- `UniProtSearchCriteria(SearchCriteria)` in `biocurator.providers.uniprot.criteria` —
+  extends the base with `reviewed: bool | None` for Swiss-Prot / TrEMBL filtering.
+- `SequenceRecord` dataclass in `biocurator.providers.base` — typed container returned by
+  `fetch_metadata` and `download`; replaces the previous untyped `dict[str, Any]`.
+  Fields: `id`, `accession`, `database`, `title`, `organism`, `sequence_length`,
+  `sequence`, `description`, `create_date`, `update_date`, `taxonomy_id`, `authors`,
+  `journal`, `downloaded`, `quality_score`.
+
+### Changed
+
+- Provider modules reorganised into per-provider subpackages:
+  - `biocurator.providers.ncbi` is now a package (`ncbi/`) with `criteria.py`,
+    `query_builders.py`, and `searcher.py`; the old flat `ncbi.py`, `ncbi_criteria.py`,
+    and `ncbi_query_builders.py` are removed.
+  - `biocurator.providers.uniprot` is now a package (`uniprot/`) with `criteria.py`,
+    `query_builders.py`, and `searcher.py`; the old flat `uniprot.py` is removed.
+  - `biocurator.providers.__init__` preserves the same public API — all previously
+    exported names continue to work from `biocurator.providers`.
+- Test files reorganised to mirror source structure: `tests/providers/ncbi/` and
+  `tests/providers/uniprot/` subpackages with per-concern modules (`test_criteria.py`,
+  `test_query_builders.py`, `test_searcher.py`, `test_apikey.py`).
+- `DatabaseSearcher` is now generic (`DatabaseSearcher[C]` where `C` is bound to
+  `SearchCriteria`). Concrete searchers declare their criteria type
+  (`NCBISearcher(DatabaseSearcher[NCBISearchCriteria])`), eliminating all
+  `# type: ignore[override]` suppressions on method signatures.
+- `NCBISearcher.build_query` delegates to `get_builder(criteria.database).build(criteria)`
+  instead of maintaining its own query-construction logic; database-specific field tags now
+  live in the corresponding `QueryBuilder` subclass.
+- `SearchCriteria` base class no longer carries NCBI-specific fields (`sequence_type`,
+  `taxonomy_filter`, `location`); these are now on `NCBISearchCriteria` only, keeping the
+  base class provider-agnostic.
+
+### Fixed
+
+- `Biocurator.run_job` was constructing a bare `SearchCriteria` object for the NCBI
+  provider, which would raise `AttributeError: 'SearchCriteria' object has no attribute
+  'database'` at runtime. It now constructs `NCBISearchCriteria` for `"ncbi"` and
+  `UniProtSearchCriteria` for `"uniprot"`.
+
 ## [0.1.1] - 2026-05-16
 
 ### Added

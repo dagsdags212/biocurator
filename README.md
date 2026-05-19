@@ -12,8 +12,10 @@ A config-driven framework for curating biological sequence datasets from various
 
 ## Supported Databases
 
-- NCBI
-- UniProt
+| Database | Entrez / REST databases |
+|----------|------------------------|
+| NCBI | nuccore, nucleotide, protein, sra, pubmed, pmc, gene, taxonomy, and more |
+| UniProt | Swiss-Prot (reviewed) and TrEMBL (unreviewed) protein entries |
 
 ## Installation
 
@@ -337,6 +339,38 @@ curator = Biocurator(email=config.email)
 for job in config.jobs:
     output_files = curator.run_job(job)
     print(f"{job.name}: {list(output_files)}")
+```
+
+## Provider internals
+
+Each database provider exposes a `QueryBuilder` that translates search criteria into a database-specific query string. You can use these directly if you need the query without running the full pipeline:
+
+```python
+from biocurator.providers.ncbi import NCBISearchCriteria, get_builder
+from biocurator.providers.base import NCBIDatabase
+
+criteria = NCBISearchCriteria(
+    database=NCBIDatabase.PUBMED,
+    organism="Homo sapiens",
+    keywords=["CRISPR"],
+)
+builder = get_builder(NCBIDatabase.PUBMED)
+print(builder.build(criteria))
+# '"Homo sapiens"[MeSH Terms] AND "CRISPR"[Title/Abstract]'
+
+# Inspect available search fields
+for field, desc in builder.available_fields().items():
+    print(f"{field}: {desc}")
+```
+
+For UniProt:
+
+```python
+from biocurator.providers.uniprot import UniProtQueryBuilder, UniProtSearchCriteria
+
+criteria = UniProtSearchCriteria(organism="Mus musculus", reviewed=True)
+query = UniProtQueryBuilder().build(criteria)
+# 'organism:"Mus musculus" AND reviewed:true'
 ```
 
 ## Output Files
