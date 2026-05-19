@@ -1,8 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from biocurator.providers.base import DatabaseConfig
-from biocurator.providers.ncbi import NCBISearcher
-from biocurator.providers.ncbi_criteria import NCBISearchCriteria
+from biocurator.providers.ncbi import NCBISearcher, NCBISearchCriteria
 from biocurator.providers.registry import ProviderRegistry
 
 
@@ -82,7 +81,7 @@ def test_build_query_delegates_to_builder(searcher):
     criteria = NCBISearchCriteria(organism="Mus musculus")
     mock_builder = MagicMock()
     mock_builder.build.return_value = "mocked_query"
-    with patch("biocurator.providers.ncbi.get_builder", return_value=mock_builder) as mock_get:
+    with patch("biocurator.providers.ncbi.searcher.get_builder", return_value=mock_builder) as mock_get:
         result = searcher.build_query(criteria)
         mock_get.assert_called_once_with(criteria.database)
         mock_builder.build.assert_called_once_with(criteria)
