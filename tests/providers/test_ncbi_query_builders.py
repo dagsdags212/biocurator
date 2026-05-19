@@ -1,9 +1,9 @@
 import pytest
 from biocurator.providers.base import NCBIDatabase
-from biocurator.providers.ncbi_criteria import NCBISearchCriteria
-from biocurator.providers.ncbi_query_builders import (
+from biocurator.providers.ncbi import (
     GeneQueryBuilder,
     LiteratureQueryBuilder,
+    NCBISearchCriteria,
     SRAQueryBuilder,
     SequenceQueryBuilder,
     TaxonomyQueryBuilder,

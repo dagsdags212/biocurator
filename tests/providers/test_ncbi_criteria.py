@@ -1,4 +1,4 @@
-from biocurator.providers.ncbi_criteria import NCBISearchCriteria
+from biocurator.providers.ncbi import NCBISearchCriteria
 from biocurator.providers.base import NCBIDatabase, SearchCriteria
 
 

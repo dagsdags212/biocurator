@@ -21,7 +21,7 @@ wheels = [
 
 [[package]]
 name = "biocurator"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "biopython" },
@@ -35,6 +35,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "biocurator" },
     { name = "pytest" },
     { name = "pytest-mock" },
 ]
@@ -52,6 +53,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "biocurator", editable = "." },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-mock", specifier = ">=3.0" },
 ]

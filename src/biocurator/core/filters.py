@@ -73,19 +73,6 @@ class SequenceFilter:
             ]
             logger.info(f"Organism filter: {len(filtered)} sequences remain")
 
-        # Location filter (search in title and description)
-        if criteria.location and filtered:
-            location_terms = [
-                term.strip().lower() for term in criteria.location.split(",")
-            ]
-            new_filtered = []
-            for seq in filtered:
-                title_desc = f"{seq.title} {seq.description}".lower()
-                if any(term in title_desc for term in location_terms):
-                    new_filtered.append(seq)
-            filtered = new_filtered
-            logger.info(f"Location filter: {len(filtered)} sequences remain")
-
         # Exclude terms
         if criteria.exclude_terms and filtered:
             for exclude_term in criteria.exclude_terms:

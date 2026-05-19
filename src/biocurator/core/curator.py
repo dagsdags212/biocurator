@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 from biocurator.providers import ProviderRegistry, DatabaseConfig, SearchCriteria
-from biocurator.providers.ncbi_criteria import NCBISearchCriteria
+from biocurator.providers.ncbi import NCBISearchCriteria
 from biocurator.providers.uniprot import UniProtSearchCriteria
 from .filters import SequenceFilter
 from ..utils.logging import get_logger
@@ -108,7 +108,7 @@ class Biocurator:
                 else None,
             )
             if db_name == "ncbi":
-                from biocurator.providers.ncbi_criteria import NCBIDatabase as _NCBIDb
+                from biocurator.providers.base import NCBIDatabase as _NCBIDb
                 criteria = NCBISearchCriteria(
                     database=_NCBIDb.NUCCORE, **common_kwargs
                 )

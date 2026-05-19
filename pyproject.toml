@@ -63,8 +63,18 @@ include = [
     "pyproject.toml",
 ]
 
+[tool.uv.workspace]
+members = [
+    ".",
+    ".",
+]
+
+[tool.uv.sources]
+biocurator = { workspace = true }
+
 [dependency-groups]
 dev = [
+    "biocurator",
     "pytest>=8.0",
     "pytest-mock>=3.0",
 ]

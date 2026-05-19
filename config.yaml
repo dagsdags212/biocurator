@@ -1,0 +1,54 @@
+email: jegsamson.dev@gmail.com
+
+jobs:
+  asfv-genomes:
+    search:
+      databases: [ncbi]
+      organism: "African swine fever virus"
+      sequence_type: nucleotide   # nucleotide | protein | sra
+      keywords: ["complete genome"]
+      max_results: 25
+      exclude_terms: ["recombinant"]
+      location: null
+      taxonomy_filter: null
+      date_range:
+        start: "2020/01/01"
+        end: "2026/05/15"
+    filter:
+      min_length: null
+      max_length: null
+      exclude_terms: []
+      quality_threshold: null     # 0.0 - 1.0
+    export:
+      outdir: results/asfv
+      formats: [fasta, csv, json]
+      prefix: asfv
+
+  covid-genomes:
+    search:
+      databases: [ncbi]
+      organism: "SARS-CoV-2"
+      sequence_type: nucleotide
+      keywords: ["complete genome"]
+      max_results: 50
+    filter:
+      min_length: 29000
+      quality_threshold: 0.8
+    export:
+      outdir: results/covid
+      formats: [fasta, csv, json]
+      prefix: sars_cov2
+
+  cytochrome-p450:
+    search:
+      databases: [ncbi, uniprot]
+      sequence_type: protein
+      keywords: ["cytochrome P450", "CYP"]
+      max_results: 200
+    filter:
+      min_length: 300
+      quality_threshold: 0.8
+    export:
+      outdir: results/cyp450
+      formats: [fasta, csv]
+      prefix: cyp450
