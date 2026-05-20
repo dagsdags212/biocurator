@@ -110,15 +110,15 @@ Then add filters back one at a time.
 
 ---
 
-## NCBI rate-limit errors
+## NCBI rate-limit or network errors
 
-**Symptoms:** `DatabaseSearchError` or slow runs with HTTP 429 responses in the logs.
+**Symptoms:** Slow runs or intermittent errors in the logs.
 
-NCBI enforces 3 requests/second for anonymous access. biocurator already respects this limit, but very large jobs (`max_results: 1000+`) will naturally take longer.
+NCBI enforces rate limits for access. biocurator already respects these limits and includes **automatic retry logic** with exponential backoff to handle transient network issues or 429 (Too Many Requests) errors.
 
 **What to do:**
-- Be patient — large jobs may take several minutes.
-- Enable verbose logging to see progress:
+- **Be patient** — large jobs (`max_results: 1000+`) may take several minutes as the tool streams data at a safe rate.
+- **Enable verbose logging** to see progress and retry attempts:
   ```bash
   biocurator run config.yaml --verbose
   ```

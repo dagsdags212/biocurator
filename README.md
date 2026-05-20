@@ -5,6 +5,8 @@ A config-driven framework for curating biological sequence datasets from various
 ## Features
 
 - **Multi-database search** — NCBI (nucleotide, protein, SRA) and UniProt
+- **Streaming Architecture** — memory-efficient processing of large datasets
+- **Robustness** — automatic retries with exponential backoff for API calls
 - **Typed config schema** — validated YAML with sensible defaults
 - **Flexible filtering** — length, quality score, organism, keywords, date range
 - **Multiple export formats** — FASTA, CSV, JSON
@@ -16,6 +18,13 @@ A config-driven framework for curating biological sequence datasets from various
 |----------|------------------------|
 | NCBI | nuccore, nucleotide, protein, sra, pubmed, pmc, gene, taxonomy, and more |
 | UniProt | Swiss-Prot (reviewed) and TrEMBL (unreviewed) protein entries |
+
+## Scalability & Robustness
+
+`biocurator` is designed for high-throughput curation:
+- **Streaming:** Sequences are processed one-by-one and streamed directly to disk, allowing you to curate thousands of sequences without exhausting system memory.
+- **NCBI History Server:** Automatically uses the NCBI History Server (`WebEnv`) for scalable and stable data retrieval from large search results.
+- **Retry Logic:** Built-in exponential backoff retries for all network operations to handle transient API failures gracefully.
 
 ## Installation
 
@@ -361,6 +370,12 @@ print(builder.build(criteria))
 # Inspect available search fields
 for field, desc in builder.available_fields().items():
     print(f"{field}: {desc}")
+
+# Get records (returns an iterator)
+searcher = ProviderRegistry.get("ncbi", DatabaseConfig(name="NCBI"), "your@email.com")
+ids = searcher.search(criteria)
+for record in searcher.fetch_metadata(ids, criteria):
+    print(record.accession)
 ```
 
 For UniProt:

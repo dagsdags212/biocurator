@@ -181,9 +181,9 @@ criteria = NCBISearchCriteria(
 )
 
 ids = searcher.search(criteria)
-records = searcher.fetch_metadata(ids, criteria)
+records_iter = searcher.fetch_metadata(ids, criteria)
 
-for rec in records:
+for rec in records_iter:
     print(rec.accession, rec.organism, rec.sequence_length)
 ```
 

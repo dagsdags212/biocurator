@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-21
+
 ### Added
 
+- **Streaming Architecture:** Implemented generator-based data fetching and streaming export to disk. This significantly reduces memory footprint when handling large datasets.
+- **Robust Retry Logic:** Added a custom exponential backoff retry decorator for all network-bound API calls (NCBI and UniProt).
+- **NCBI History Server Support:** `NCBISearcher` now uses `WebEnv` and `QueryKey` for more efficient and scalable data retrieval from Entrez.
+- **StreamingExporter:** New core utility for incremental writing of FASTA, CSV, and JSON files.
 - `NCBIDatabase` StrEnum in `biocurator.providers.base` — 39 Entrez database identifiers
   grouped by category (literature, nucleotide, protein, gene, taxonomy, …). Values are valid
   `db=` strings accepted by all Entrez endpoints.
@@ -43,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Refactored `DatabaseSearcher` interface: `fetch_metadata` and `download` now return `Iterator[SequenceRecord]`.
+- Updated `Biocurator.run_job` to consume data streams instead of accumulating records in memory.
+- Improved progress reporting for streaming downloads.
 - Provider modules reorganised into per-provider subpackages:
   - `biocurator.providers.ncbi` is now a package (`ncbi/`) with `criteria.py`,
     `query_builders.py`, and `searcher.py`; the old flat `ncbi.py`, `ncbi_criteria.py`,
@@ -142,6 +151,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Extraction logic specific to ASFV genomes (now superseded by the generic config-driven pipeline)
 
-[Unreleased]: https://github.com/dagsdags212/biocurator/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/dagsdags212/biocurator/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/dagsdags212/biocurator/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/dagsdags212/biocurator/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/dagsdags212/biocurator/releases/tag/v0.1.0
