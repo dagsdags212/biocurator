@@ -37,7 +37,7 @@ class SequenceFilter:
         List[SequenceRecord]
             Filtered list of sequences
         """
-        logger.info("Applying additional filters...")
+        logger.debug("Applying additional filters...")
 
         filtered = sequences.copy()
         initial_count = len(filtered)
@@ -47,7 +47,7 @@ class SequenceFilter:
             filtered = list(
                 filter(lambda s: s.sequence_length >= criteria.min_length, filtered)
             )
-            logger.info(
+            logger.debug(
                 f"Length filter (min {criteria.min_length}): {len(filtered)} sequences remain"
             )
 
@@ -55,7 +55,7 @@ class SequenceFilter:
             filtered = list(
                 filter(lambda s: s.sequence_length <= criteria.max_length, filtered)
             )
-            logger.info(
+            logger.debug(
                 f"Length filter (max {criteria.max_length}): {len(filtered)} sequences remain"
             )
 
@@ -65,7 +65,7 @@ class SequenceFilter:
         if criteria.organism and filtered and filtered[0].organism:
             organism_lower = criteria.organism.lower()
             filtered = [s for s in filtered if organism_lower in s.organism.lower()]
-            logger.info(f"Organism filter: {len(filtered)} sequences remain")
+            logger.debug(f"Organism filter: {len(filtered)} sequences remain")
 
         # Exclude terms
         if criteria.exclude_terms and filtered:
@@ -76,7 +76,7 @@ class SequenceFilter:
                     for s in filtered
                     if exclude_lower not in f"{s.title} {s.description}".lower()
                 ]
-            logger.info(f"Exclude terms filter: {len(filtered)} sequences remain")
+            logger.debug(f"Exclude terms filter: {len(filtered)} sequences remain")
 
         # Quality filter — deferred to after download; sequences without actual
         # sequence data (metadata-only records) would score 0.0 and be incorrectly
@@ -86,11 +86,11 @@ class SequenceFilter:
                 filtered = SequenceFilter.__filter_by_quality(
                     filtered, criteria.quality_threshold
                 )
-                logger.info(f"Quality filter: {len(filtered)} sequences remain")
+                logger.debug(f"Quality filter: {len(filtered)} sequences remain")
             else:
-                logger.info("Quality filter deferred: sequence data not yet available")
+                logger.debug("Quality filter deferred: sequence data not yet available")
 
-        logger.info(
+        logger.debug(
             f"Filtering complete: {len(filtered)}/{initial_count} sequences passed filters"
         )
         return filtered

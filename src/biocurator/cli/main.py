@@ -21,6 +21,7 @@ logger = get_logger(__name__)
 
 from biocurator.cli.commands.init import init_command
 from biocurator.cli.commands.run import run_command
+from biocurator.cli.commands.preview import preview_command
 
 
 def _version_callback(value: bool) -> None:
@@ -40,6 +41,7 @@ app = typer.Typer(
 
 app.command("init")(init_command)
 app.command("run")(run_command)
+app.command("preview")(preview_command)
 
 
 # Utility functions for rich output

@@ -129,20 +129,20 @@ class Biocurator:
                 metadata_generator = searcher.fetch_metadata(ids, criteria)
                 
                 filtered_metadata_ids = []
-                # fetch_metadata yields SequenceRecord objects. We filter them.
-                # Since criteria is passed to filter_by_criteria, it handles the logic.
-                # However, filter_by_criteria expects a list. We need to adapt.
                 
-                batch_metadata = []
+                processed_count = 0
                 for record in metadata_generator:
+                    processed_count += 1
                     # Apply metadata filters (length, organism, exclude terms)
                     passed = SequenceFilter.filter_by_criteria([record], criteria)
                     if passed:
                         filtered_metadata_ids.append(record.id)
-                        batch_metadata.append(record)
+                    
+                    if processed_count % 10 == 0 or processed_count == total_found:
+                        _report("filter", processed_count, total_found)
                 
                 total_filtered = len(filtered_metadata_ids)
-                _report("filter", total_filtered, total_found)
+                logger.info(f"Filtering complete: {total_filtered}/{total_found} records passed.")
 
                 if not filtered_metadata_ids:
                     continue
@@ -153,16 +153,16 @@ class Biocurator:
                 
                 download_count = 0
                 for seq_record in download_generator:
+                    download_count += 1
                     # Apply sequence-level quality filter
                     if criteria.quality_threshold:
                         passed = SequenceFilter.apply_quality_filter([seq_record], criteria.quality_threshold)
                         if not passed:
+                            _report("download", download_count, total_filtered)
                             continue
                     
-                    # Merge metadata from original fetch (if needed, although download yields a full record)
                     # Write to disk immediately
                     exporter.write_record(seq_record)
-                    download_count += 1
                     _report("download", download_count, total_filtered)
 
             return exporter.get_output_files()

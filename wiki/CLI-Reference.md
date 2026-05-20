@@ -116,6 +116,49 @@ Dry run — 2 job(s) would execute:
 
 ---
 
+---
+
+## `biocurator preview`
+
+Preview search results for a specific job without downloading sequences. This is useful for testing keywords and filters before committing to a full download.
+
+```
+biocurator preview [OPTIONS] JOB_NAME
+```
+
+| Argument / Option | Short | Default | Description |
+|-------------------|-------|---------|-------------|
+| `JOB_NAME` | — | — | Required. The name of the job to preview. |
+| `--config` | `-c` | `config.yaml` | Path to the YAML config file. |
+
+**Examples:**
+
+```bash
+# Preview results for 'covid-genomes' using config.yaml
+biocurator preview covid-genomes
+
+# Use a specific config file
+biocurator preview spike-proteins --config tests.yaml
+```
+
+**Preview output:**
+
+```
+Previewing results for job: covid-genomes
+Searching NCBI...
+
+              Results from NCBI
+┌────────────┬──────────────────────────────┬────────────┬────────┐
+│ Accession  │ Title                        │ Organism   │ Length │
+├────────────┼──────────────────────────────┼────────────┼────────┤
+│ NC_045512  │ SARS-CoV-2 isolate Wuhan-Hu-1│ SARS-CoV-2 │  29903 │
+│ MT019529   │ SARS-CoV-2 isolate 2019-nCoV │ SARS-CoV-2 │  29882 │
+└────────────┴──────────────────────────────┴────────────┴────────┘
+Showing 2 of 2 total matches
+```
+
+---
+
 ## Exit codes
 
 | Code | Meaning |

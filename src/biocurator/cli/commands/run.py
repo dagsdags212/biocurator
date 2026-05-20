@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Dict
 import typer
 from biocurator.cli.main import console
 from rich.progress import (
@@ -7,7 +7,12 @@ from rich.progress import (
     BarColumn,
     TextColumn,
     TimeElapsedColumn,
+    MofNCompleteColumn,
+    TaskProgressColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
 )
+from rich.text import Text
 from rich.table import Table
 from biocurator.config.loader import ConfigLoader
 from biocurator.core.curator import Biocurator
@@ -73,27 +78,63 @@ def run_command(
 
     summary_rows = []
 
+    # Custom Progress that shows speed as "items/s"
+    class ProcessingSpeedColumn(TransferSpeedColumn):
+        def render(self, task) -> Text:
+            speed = task.finished_speed or task.speed
+            if speed is None:
+                return Text("-", style="progress.remaining")
+            return Text(f"{speed:.1f} it/s", style="progress.data.speed")
+
     with Progress(
         SpinnerColumn(),
-        TextColumn("[bold blue]{task.description}"),
-        BarColumn(),
-        TextColumn("{task.completed}/{task.total}"),
-        TimeElapsedColumn(),
+        TextColumn("[bold blue]{task.fields[job_name]}", justify="right"),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(bar_width=None),
+        MofNCompleteColumn(),
+        TaskProgressColumn(),
+        ProcessingSpeedColumn(),
+        TimeRemainingColumn(),
         console=console,
+        expand=True,
     ) as progress:
+        # Initialize all tasks upfront
+        task_ids: Dict[str, int] = {}
         for job in selected_jobs:
-            task = progress.add_task(f"[{job.name}] search", total=4, completed=0)
+            task_id = progress.add_task(
+                "pending", job_name=job.name, total=None, start=False
+            )
+            task_ids[job.name] = task_id
 
-            def make_callback(t):
+        for job in selected_jobs:
+            task_id = task_ids[job.name]
+            progress.start_task(task_id)
+            progress.update(task_id, description="searching")
+
+            def make_callback(t_id):
                 def callback(phase, current, total):
-                    progress.update(t, description=f"[{job.name}] {phase}", advance=1)
+                    progress.update(
+                        t_id,
+                        description=phase,
+                        completed=current,
+                        total=total,
+                    )
 
                 return callback
 
-            output_files = curator.run_job(job, progress_callback=make_callback(task))
-            summary_rows.append((job.name, "done", str(len(output_files)) + " file(s)"))
+            try:
+                output_files = curator.run_job(
+                    job, progress_callback=make_callback(task_id)
+                )
+                progress.update(task_id, description="[green]done")
+                summary_rows.append(
+                    (job.name, "[green]done[/]", f"{len(output_files)} file(s)")
+                )
+            except Exception as exc:
+                progress.update(task_id, description=f"[red]failed")
+                summary_rows.append((job.name, f"[red]failed: {exc}[/]", "0"))
 
-    table = Table(title="Run Summary")
+    table = Table(title="Run Summary", show_header=True, header_style="bold magenta")
     table.add_column("Job", style="bold")
     table.add_column("Status")
     table.add_column("Output")
