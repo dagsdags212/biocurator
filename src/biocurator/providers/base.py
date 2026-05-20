@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from enum import StrEnum
+from enum import Enum
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Iterator
 
 
-class NCBIDatabase(StrEnum):
+class NCBIDatabase(str, Enum):
     # Literature & References
     PUBMED = "pubmed"
     PMC = "pmc"
@@ -134,9 +134,9 @@ class DatabaseSearcher(ABC, Generic[C]):
         """Query the database and return a list of record IDs."""
 
     @abstractmethod
-    def fetch_metadata(self, ids: list[str], criteria: C | None = None) -> list[SequenceRecord]:
+    def fetch_metadata(self, ids: list[str], criteria: C | None = None) -> Iterator[SequenceRecord]:
         """Retrieve metadata for a set of IDs."""
 
     @abstractmethod
-    def download(self, ids: list[str], outdir: Path, criteria: C | None = None) -> list[SequenceRecord]:
+    def download(self, ids: list[str], outdir: Path, criteria: C | None = None) -> Iterator[SequenceRecord]:
         """Download sequences and return associated metadata."""

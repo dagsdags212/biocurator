@@ -40,8 +40,6 @@ class Biocurator:
         self.email = email
         self.outdir = Path(outdir) if outdir else Path("biocurator_output")
         self.searchers: dict = {}
-        self.sequences: list = []
-        self.metadata: list = []
         self._init_database_searchers()
         logger.info("Biocurator initialization complete")
 
@@ -75,119 +73,99 @@ class Biocurator:
         dict
             Mapping of format name to output file Path.
         """
+        from .exporter import StreamingExporter
 
         def _report(phase, current, total):
             if progress_callback:
                 progress_callback(phase, current, total)
 
-        all_sequences = []
-        all_metadata = []
+        export_config = job_config.export
+        outdir = Path(export_config.outdir)
+        
+        with StreamingExporter(outdir, export_config.prefix, export_config.formats) as exporter:
+            for db_name in job_config.search.databases:
+                if db_name not in self.searchers:
+                    logger.warning(f"Database '{db_name}' not configured, skipping")
+                    continue
 
-        for db_name in job_config.search.databases:
-            if db_name not in self.searchers:
-                logger.warning(f"Database '{db_name}' not configured, skipping")
-                continue
+                searcher = self.searchers[db_name]
+                search_cfg = job_config.search
+                filter_cfg = job_config.filter
 
-            searcher = self.searchers[db_name]
-            search_cfg = job_config.search
-            filter_cfg = job_config.filter
-
-            common_kwargs = dict(
-                organism=search_cfg.organism,
-                keywords=search_cfg.keywords,
-                min_length=filter_cfg.min_length,
-                max_length=filter_cfg.max_length,
-                max_results=search_cfg.max_results,
-                exclude_terms=filter_cfg.exclude_terms,
-                quality_threshold=filter_cfg.quality_threshold,
-                start_date=search_cfg.date_range.get("start")
-                if search_cfg.date_range
-                else None,
-                end_date=search_cfg.date_range.get("end")
-                if search_cfg.date_range
-                else None,
-            )
-            if db_name == "ncbi":
-                from biocurator.providers.base import NCBIDatabase as _NCBIDb
-                criteria = NCBISearchCriteria(
-                    database=_NCBIDb.NUCCORE, **common_kwargs
+                common_kwargs = dict(
+                    organism=search_cfg.organism,
+                    keywords=search_cfg.keywords,
+                    min_length=filter_cfg.min_length,
+                    max_length=filter_cfg.max_length,
+                    max_results=search_cfg.max_results,
+                    exclude_terms=filter_cfg.exclude_terms,
+                    quality_threshold=filter_cfg.quality_threshold,
+                    start_date=search_cfg.date_range.get("start")
+                    if search_cfg.date_range
+                    else None,
+                    end_date=search_cfg.date_range.get("end")
+                    if search_cfg.date_range
+                    else None,
                 )
-            elif db_name == "uniprot":
-                criteria = UniProtSearchCriteria(**common_kwargs)
-            else:
-                criteria = SearchCriteria(**common_kwargs)
+                if db_name == "ncbi":
+                    from biocurator.providers.base import NCBIDatabase as _NCBIDb
+                    criteria = NCBISearchCriteria(
+                        database=_NCBIDb.NUCCORE, **common_kwargs
+                    )
+                elif db_name == "uniprot":
+                    criteria = UniProtSearchCriteria(**common_kwargs)
+                else:
+                    criteria = SearchCriteria(**common_kwargs)
 
-            ids = searcher.search(criteria)
-            _report("search", len(ids), len(ids))
+                ids = searcher.search(criteria)
+                total_found = len(ids)
+                _report("search", total_found, total_found)
 
-            if not ids:
-                continue
+                if not ids:
+                    continue
 
-            metadata = searcher.fetch_metadata(ids)
-            filtered_metadata = SequenceFilter.filter_by_criteria(metadata, criteria)
-            _report("filter", len(filtered_metadata), len(metadata))
+                # Stream metadata and filter
+                logger.info(f"Filtering metadata for {total_found} potential matches...")
+                metadata_generator = searcher.fetch_metadata(ids, criteria)
+                
+                filtered_metadata_ids = []
+                # fetch_metadata yields SequenceRecord objects. We filter them.
+                # Since criteria is passed to filter_by_criteria, it handles the logic.
+                # However, filter_by_criteria expects a list. We need to adapt.
+                
+                batch_metadata = []
+                for record in metadata_generator:
+                    # Apply metadata filters (length, organism, exclude terms)
+                    passed = SequenceFilter.filter_by_criteria([record], criteria)
+                    if passed:
+                        filtered_metadata_ids.append(record.id)
+                        batch_metadata.append(record)
+                
+                total_filtered = len(filtered_metadata_ids)
+                _report("filter", total_filtered, total_found)
 
-            if not filtered_metadata:
-                continue
+                if not filtered_metadata_ids:
+                    continue
 
-            filtered_ids = [m.id for m in filtered_metadata]
-            export_dir = Path(job_config.export.outdir)
-            export_dir.mkdir(parents=True, exist_ok=True)
-            sequences = searcher.download(filtered_ids, export_dir)
+                # Stream download and final quality check
+                logger.info(f"Downloading {total_filtered} filtered sequences...")
+                download_generator = searcher.download(filtered_metadata_ids, outdir, criteria)
+                
+                download_count = 0
+                for seq_record in download_generator:
+                    # Apply sequence-level quality filter
+                    if criteria.quality_threshold:
+                        passed = SequenceFilter.apply_quality_filter([seq_record], criteria.quality_threshold)
+                        if not passed:
+                            continue
+                    
+                    # Merge metadata from original fetch (if needed, although download yields a full record)
+                    # Write to disk immediately
+                    exporter.write_record(seq_record)
+                    download_count += 1
+                    _report("download", download_count, total_filtered)
 
-            if criteria.quality_threshold and sequences:
-                sequences = SequenceFilter.apply_quality_filter(
-                    sequences, criteria.quality_threshold
-                )
+            return exporter.get_output_files()
 
-            _report("download", len(sequences), len(filtered_ids))
-
-            all_sequences.extend(sequences)
-            all_metadata.extend(filtered_metadata)
-
-        if not all_sequences:
-            return {}
-
-        self.sequences = all_sequences
-        self.metadata = all_metadata
-
-        output_files = self._export(job_config.export)
-        _report("export", len(output_files), len(output_files))
-        return output_files
-
-    def _export(self, export_config) -> dict:
-        """Write sequences and metadata to disk."""
-        from biocurator.exceptions import ExportError
-
-        export_dir = Path(export_config.outdir)
-        export_dir.mkdir(parents=True, exist_ok=True)
-        prefix = export_config.prefix
-        output_files = {}
-
-        try:
-            if "fasta" in export_config.formats:
-                fasta_file = export_dir / f"{prefix}_sequences.fasta"
-                with open(fasta_file, "w") as f:
-                    for seq in self.sequences:
-                        f.write(f">{seq.accession} {seq.description}\n")
-                        f.write(f"{seq.sequence}\n")
-                output_files["fasta"] = fasta_file
-
-            if "csv" in export_config.formats and self.metadata:
-                csv_file = export_dir / f"{prefix}_metadata.csv"
-                pd.DataFrame([vars(r) for r in self.metadata]).to_csv(csv_file, index=False)
-                output_files["csv"] = csv_file
-
-            if "json" in export_config.formats and self.metadata:
-                import json as _json
-
-                json_file = export_dir / f"{prefix}_metadata.json"
-                with open(json_file, "w") as f:
-                    _json.dump([vars(r) for r in self.metadata], f, indent=2, default=str)
-                output_files["json"] = json_file
-
-        except OSError as exc:
-            raise ExportError(f"Failed to write output: {exc}") from exc
-
-        return output_files
+    # _export is no longer needed as StreamingExporter handles it.
 

@@ -44,21 +44,17 @@ class SequenceFilter:
 
         # Length filter
         if criteria.min_length:
-            filtered = [
-                s
-                for s in filtered
-                if s.sequence_length >= criteria.min_length
-            ]
+            filtered = list(
+                filter(lambda s: s.sequence_length >= criteria.min_length, filtered)
+            )
             logger.info(
                 f"Length filter (min {criteria.min_length}): {len(filtered)} sequences remain"
             )
 
         if criteria.max_length:
-            filtered = [
-                s
-                for s in filtered
-                if s.sequence_length <= criteria.max_length
-            ]
+            filtered = list(
+                filter(lambda s: s.sequence_length <= criteria.max_length, filtered)
+            )
             logger.info(
                 f"Length filter (max {criteria.max_length}): {len(filtered)} sequences remain"
             )
@@ -68,9 +64,7 @@ class SequenceFilter:
         # metadata stage will have organism="" and would be incorrectly rejected.
         if criteria.organism and filtered and filtered[0].organism:
             organism_lower = criteria.organism.lower()
-            filtered = [
-                s for s in filtered if organism_lower in s.organism.lower()
-            ]
+            filtered = [s for s in filtered if organism_lower in s.organism.lower()]
             logger.info(f"Organism filter: {len(filtered)} sequences remain")
 
         # Exclude terms
@@ -80,8 +74,7 @@ class SequenceFilter:
                 filtered = [
                     s
                     for s in filtered
-                    if exclude_lower
-                    not in f"{s.title} {s.description}".lower()
+                    if exclude_lower not in f"{s.title} {s.description}".lower()
                 ]
             logger.info(f"Exclude terms filter: {len(filtered)} sequences remain")
 
@@ -95,9 +88,7 @@ class SequenceFilter:
                 )
                 logger.info(f"Quality filter: {len(filtered)} sequences remain")
             else:
-                logger.info(
-                    "Quality filter deferred: sequence data not yet available"
-                )
+                logger.info("Quality filter deferred: sequence data not yet available")
 
         logger.info(
             f"Filtering complete: {len(filtered)}/{initial_count} sequences passed filters"

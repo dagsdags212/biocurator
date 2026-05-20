@@ -1,6 +1,7 @@
 import time
 from io import StringIO
 from pathlib import Path
+from typing import Iterator
 
 from requests import Session
 
@@ -11,6 +12,7 @@ from biocurator.providers.uniprot.criteria import UniProtSearchCriteria
 from biocurator.providers.uniprot.query_builders import UniProtQueryBuilder
 from biocurator.providers.registry import ProviderRegistry
 from biocurator.utils.logging import get_logger
+from biocurator.utils.network import retry
 
 logger = get_logger(__name__)
 
@@ -22,6 +24,12 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
         super().__init__(config, email)
         self._base_url = "https://rest.uniprot.org"
         self.session = Session()
+
+    @retry(exceptions=(Exception,), max_attempts=3)
+    def _safe_get(self, url: str, **kwargs):
+        response = self.session.get(url, **kwargs)
+        response.raise_for_status()
+        return response
 
     def build_query(self, criteria: UniProtSearchCriteria) -> str:
         return UniProtQueryBuilder().build(criteria)
@@ -37,8 +45,7 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
                 "fields": "accession",
                 "size": min(criteria.max_results, 500),
             }
-            response = self.session.get(url, params=params, timeout=self.config.timeout)
-            response.raise_for_status()
+            response = self._safe_get(url, params=params, timeout=self.config.timeout)
             lines = response.text.strip().split("\n")[1:]
             ids = [line.strip() for line in lines if line.strip()]
             logger.info(f"Found {len(ids)} UniProt entries")
@@ -47,9 +54,8 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
             logger.error(f"Error searching UniProt: {exc}")
             return []
 
-    def fetch_metadata(self, ids: list[str], criteria: UniProtSearchCriteria | None = None) -> list[SequenceRecord]:
-        logger.info(f"Fetching UniProt metadata for {len(ids)} entries...")
-        metadata_list = []
+    def fetch_metadata(self, ids: list[str], criteria: UniProtSearchCriteria | None = None) -> Iterator[SequenceRecord]:
+        logger.info(f"Streaming UniProt metadata for {len(ids)} entries...")
         batch_size = min(self.config.batch_size, 25)
         for i in range(0, len(ids), batch_size):
             batch = ids[i : i + batch_size]
@@ -60,14 +66,13 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
                     "format": "tsv",
                     "fields": "accession,id,protein_name,organism_name,length,date_created,date_modified,taxonomy_id",
                 }
-                response = self.session.get(url, params=params, timeout=self.config.timeout)
-                response.raise_for_status()
+                response = self._safe_get(url, params=params, timeout=self.config.timeout)
                 lines = response.text.strip().split("\n")
                 headers = lines[0].split("\t")
                 for line in lines[1:]:
                     values = line.split("\t")
                     if len(values) >= len(headers):
-                        metadata_list.append(SequenceRecord(
+                        yield SequenceRecord(
                             id=values[0],
                             accession=values[0],
                             title=values[2] if len(values) > 2 else "",
@@ -77,23 +82,19 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
                             update_date=values[6] if len(values) > 6 else "",
                             taxonomy_id=values[7] if len(values) > 7 else "",
                             database="UniProt",
-                        ))
+                        )
                 time.sleep(self.config.rate_limit)
             except Exception as exc:
                 logger.warning(f"Error fetching UniProt metadata for batch {i // batch_size + 1}: {exc}")
-        logger.info(f"Retrieved metadata for {len(metadata_list)} UniProt entries")
-        return metadata_list
 
-    def download(self, ids: list[str], outdir: Path, criteria: UniProtSearchCriteria | None = None) -> list[SequenceRecord]:
-        logger.info(f"Attempting to download {len(ids)} UniProt sequences...")
-        downloaded = []
+    def download(self, ids: list[str], outdir: Path, criteria: UniProtSearchCriteria | None = None) -> Iterator[SequenceRecord]:
+        logger.info(f"Attempting to stream download {len(ids)} UniProt sequences...")
         for uid in ids:
             try:
                 url = f"{self._base_url}/uniprotkb/{uid}.fasta"
-                response = self.session.get(url, timeout=self.config.timeout)
-                response.raise_for_status()
+                response = self._safe_get(url, timeout=self.config.timeout)
                 record = SeqIO.read(StringIO(response.text), "fasta")
-                downloaded.append(SequenceRecord(
+                yield SequenceRecord(
                     id=uid,
                     accession=record.id,
                     description=record.description,
@@ -101,13 +102,11 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
                     sequence=str(record.seq),
                     database="UniProt",
                     downloaded=True,
-                ))
+                )
                 logger.debug(f"Downloaded {record.id} ({len(record.seq)} aa)")
                 time.sleep(self.config.rate_limit)
             except Exception as exc:
                 logger.warning(f"Failed to download {uid}: {exc}")
-        logger.info(f"Successfully downloaded {len(downloaded)} UniProt sequences")
-        return downloaded
 
 
 ProviderRegistry.register("uniprot", UniProtSearcher)
