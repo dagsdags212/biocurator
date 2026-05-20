@@ -20,3 +20,4 @@ docs/
 *.fasta
 *.fna
 *.csv
+results/
