@@ -25,18 +25,18 @@ def job_config(tmp_path):
 def mock_ncbi_searcher():
     searcher = MagicMock()
     searcher.search.return_value = ["123", "456"]
-    searcher.fetch_metadata.return_value = [
+    searcher.fetch_metadata.return_value = iter([
         SequenceRecord(id="123", accession="NC_000001", sequence_length=500, organism="E. coli",
                        title="E. coli genome", database="NCBI"),
         SequenceRecord(id="456", accession="NC_000002", sequence_length=200, organism="E. coli",
                        title="E. coli genome 2", database="NCBI"),
-    ]
-    searcher.download.return_value = [
+    ])
+    searcher.download.return_value = iter([
         SequenceRecord(id="123", accession="NC_000001", sequence="ATGC" * 125,
                        sequence_length=500, description="E. coli", database="NCBI", downloaded=True),
         SequenceRecord(id="456", accession="NC_000002", sequence="ATGC" * 50,
                        sequence_length=200, description="E. coli 2", database="NCBI", downloaded=True),
-    ]
+    ])
     return searcher
 
 
@@ -86,7 +86,8 @@ def test_run_job_progress_callback_is_called(job_config, mock_ncbi_searcher, tmp
     assert "search" in calls
     assert "filter" in calls
     assert "download" in calls
-    assert "export" in calls
+    # Note: 'export' is no longer a separate phase in run_job reporting, 
+    # it happens during download streaming.
 
 
 def test_run_job_skips_unknown_database(job_config, tmp_path):
@@ -94,4 +95,6 @@ def test_run_job_skips_unknown_database(job_config, tmp_path):
     curator = Biocurator(email="test@example.com", outdir=str(tmp_path))
 
     result = curator.run_job(job_config)
-    assert result == {}
+    # result should contain the paths to files (even if empty) because StreamingExporter 
+    # opens them immediately in the 'with' block.
+    assert "fasta" in result
