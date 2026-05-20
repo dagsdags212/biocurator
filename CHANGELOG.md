@@ -7,22 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-05-21
+## [0.2.0] - 2026-05-21
 
 ### Added
+
 - **Multi-Job Dashboard:** The `run` command now shows all selected jobs simultaneously with a live progress dashboard.
 - **Real-time Metrics:** Progress bars now include processing speed (items/second) and estimated time remaining (ETA).
 - **Preview Subcommand:** Added `biocurator preview <job>` to quickly inspect metadata results from NCBI/UniProt without downloading full sequences.
 - **Enhanced Progress Bars:** Now uses specific `MofNCompleteColumn` and `TaskProgressColumn` for clearer status tracking.
-
-### Changed
-- Downgraded per-record filtering logs to `DEBUG` level for a cleaner default terminal output.
-- Refactored CLI task management to support concurrent job monitoring in the UI.
-- Summary table now uses more descriptive status colors and formatting.
-
-## [0.2.0] - 2026-05-21
-
-### Added
 
 - **Streaming Architecture:** Implemented generator-based data fetching and streaming export to disk. This significantly reduces memory footprint when handling large datasets.
 - **Robust Retry Logic:** Added a custom exponential backoff retry decorator for all network-bound API calls (NCBI and UniProt).
@@ -62,6 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Downgraded per-record filtering logs to `DEBUG` level for a cleaner default terminal output.
+- Refactored CLI task management to support concurrent job monitoring in the UI.
+- Summary table now uses more descriptive status colors and formatting.
 - Refactored `DatabaseSearcher` interface: `fetch_metadata` and `download` now return `Iterator[SequenceRecord]`.
 - Updated `Biocurator.run_job` to consume data streams instead of accumulating records in memory.
 - Improved progress reporting for streaming downloads.
@@ -91,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Biocurator.run_job` was constructing a bare `SearchCriteria` object for the NCBI
   provider, which would raise `AttributeError: 'SearchCriteria' object has no attribute
-  'database'` at runtime. It now constructs `NCBISearchCriteria` for `"ncbi"` and
+'database'` at runtime. It now constructs `NCBISearchCriteria` for `"ncbi"` and
   `UniProtSearchCriteria` for `"uniprot"`.
 
 ## [0.1.1] - 2026-05-16
