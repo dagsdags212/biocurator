@@ -11,13 +11,7 @@ configured database providers and displaying health status.
 from typing import Annotated
 import typer
 from rich.table import Table
-from rich.console import Console
-from biocurator.cli.main import (
-    console,
-    print_error,
-    print_info,
-    print_warning,
-)
+from biocurator.cli.main import console
 from biocurator.config.loader import ConfigLoader
 from biocurator.core.curator import Biocurator
 from biocurator.exceptions import ConfigNotFoundError, InvalidConfigError
@@ -37,10 +31,10 @@ def status_command(
     try:
         global_config = ConfigLoader.load(config)
     except ConfigNotFoundError as exc:
-        print_error(str(exc))
+        console.print(f"[bold red]Error:[/bold red] {exc}")
         raise typer.Exit(1)
     except InvalidConfigError as exc:
-        print_error(f"Invalid config: {exc}")
+        console.print(f"[bold red]Invalid config:[/bold red] {exc}")
         raise typer.Exit(1)
 
     curator = Biocurator(
@@ -50,10 +44,10 @@ def status_command(
     )
 
     if not curator.searchers:
-        print_warning("No database providers configured.")
+        console.print("[yellow]No database providers configured.[/yellow]")
         raise typer.Exit(0)
 
-    print_info("Probing provider health...\n")
+    console.print("[bold blue]Probing provider health...[/bold blue]\n")
 
     statuses = curator.get_health_status()
 
