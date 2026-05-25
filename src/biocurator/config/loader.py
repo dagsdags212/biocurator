@@ -5,6 +5,7 @@ from biocurator.config.schema import (
     FilterConfig,
     GlobalConfig,
     JobConfig,
+    RetryConfig,
     SearchConfig,
 )
 from biocurator.exceptions import ConfigNotFoundError, InvalidConfigError
@@ -34,7 +35,9 @@ class ConfigLoader:
         if not raw_jobs or not isinstance(raw_jobs, dict):
             raise InvalidConfigError("'jobs' must be a non-empty mapping")
         jobs = [ConfigLoader._parse_job(name, job) for name, job in raw_jobs.items()]
-        return GlobalConfig(email=email, jobs=jobs)
+        raw_retry = data.get("retry")
+        retry_cfg = RetryConfig.from_dict(raw_retry) if raw_retry else None
+        return GlobalConfig(email=email, jobs=jobs, retry=retry_cfg)
 
     @staticmethod
     def _parse_job(name: str, data: dict) -> JobConfig:
@@ -59,6 +62,13 @@ class ConfigLoader:
             location=search_data.get("location"),
             taxonomy_filter=search_data.get("taxonomy_filter"),
         )
+
+        raw_job_retry = search_data.get("retry")
+        if raw_job_retry and isinstance(raw_job_retry, dict):
+            per_db_retry = {}
+            for db_name, db_retry_cfg in raw_job_retry.items():
+                per_db_retry[db_name] = RetryConfig.from_dict(db_retry_cfg)
+            search_cfg.retry = per_db_retry
 
         filter_cfg = FilterConfig(
             min_length=filter_data.get("min_length"),

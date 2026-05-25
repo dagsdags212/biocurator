@@ -4,6 +4,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Generic, TypeVar, Iterator
 
+from biocurator.config.schema import RetryConfig
+
 
 class NCBIDatabase(str, Enum):
     # Literature & References
@@ -99,6 +101,7 @@ class DatabaseConfig:
     rate_limit: float = 0.3
     batch_size: int = 20
     timeout: int = 30
+    retry: RetryConfig | None = None
 
 
 @dataclass
@@ -134,9 +137,13 @@ class DatabaseSearcher(ABC, Generic[C]):
         """Query the database and return a list of record IDs."""
 
     @abstractmethod
-    def fetch_metadata(self, ids: list[str], criteria: C | None = None) -> Iterator[SequenceRecord]:
+    def fetch_metadata(
+        self, ids: list[str], criteria: C | None = None
+    ) -> Iterator[SequenceRecord]:
         """Retrieve metadata for a set of IDs."""
 
     @abstractmethod
-    def download(self, ids: list[str], outdir: Path, criteria: C | None = None) -> Iterator[SequenceRecord]:
+    def download(
+        self, ids: list[str], outdir: Path, criteria: C | None = None
+    ) -> Iterator[SequenceRecord]:
         """Download sequences and return associated metadata."""
