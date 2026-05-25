@@ -14,9 +14,9 @@
 
 ### Circuit Breaker
 
-- [ ] **CB-01**: Add per-provider circuit breaker that prevents cascading failures when a server is down
+- [X] **CB-01**: Add per-provider circuit breaker that prevents cascading failures when a server is down
 - [ ] **CB-02**: Integrate circuit breaker with existing provider layer — wrap searcher public methods
-- [ ] **CB-03**: Add circuit breaker configuration to `DatabaseConfig` — failure threshold, recovery timeout, half-open max retries
+- [X] **CB-03**: Add circuit breaker configuration to `DatabaseConfig` — failure threshold, recovery timeout, half-open max retries
 - [ ] **CB-04**: Expose circuit breaker state for observability (CLI status command and logs)
 
 ### Health Checks & CLI Status
@@ -42,7 +42,7 @@
 ### Configuration
 
 - [ ] **CFG-01**: Add retry, circuit breaker, and timeout fields to `DatabaseConfig` schema — all optional with sensible defaults
-- [ ] **CFG-02**: Ensure backward compatibility — existing YAML configs without new fields must parse without error
+- [X] **CFG-02**: Ensure backward compatibility — existing YAML configs without new fields must parse without error
 - [ ] **CFG-03**: Add pre-flight check toggle to job config (`search.preflight_check: true/false`)
 
 ## v2 Requirements
@@ -79,9 +79,9 @@
 | ERR-02 | Phase 1 | Pending |
 | ERR-03 | Phase 1 | Pending |
 | ERR-04 | Phase 1 | Pending |
-| CB-01 | Phase 2 | Pending |
+| CB-01 | Phase 2 | Complete |
 | CB-02 | Phase 2 | Pending |
-| CB-03 | Phase 2 | Pending |
+| CB-03 | Phase 2 | Complete |
 | CB-04 | Phase 2 | Pending |
 | STATUS-01 | Phase 2 | Pending |
 | STATUS-02 | Phase 2 | Pending |
@@ -95,7 +95,7 @@
 | DI-03 | Phase 3 | Pending |
 | DI-04 | Phase 3 | Pending |
 | CFG-01 | Phase 1 | Pending |
-| CFG-02 | Phase 1 | Pending |
+| CFG-02 | Phase 2 | Complete |
 | CFG-03 | Phase 5 | Pending |
 
 **Coverage:**
