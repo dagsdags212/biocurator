@@ -28,7 +28,7 @@
 
 ### CLI Jobs & Files
 
-- [ ] **CLI-01**: `biocurator jobs [CONFIG]` — list available jobs from a config file with descriptions and database targets
+- [ ] **CLI-01**: `biocurator jobs [CONFIG]` — list available jobs from an optional config file path; defaults to `biocurator_config.yaml` in CWD if present, otherwise shows a clear error suggesting the user specify a path
 - [ ] **CLI-02**: `biocurator files [JOB_NAME]` — list downloaded files, with optional per-job filtering
 - [ ] **CLI-03**: `biocurator files --verify` — verify stored checksums to detect data corruption or bit-rot
 
@@ -75,33 +75,33 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ERR-01 | | Pending |
-| ERR-02 | | Pending |
-| ERR-03 | | Pending |
-| ERR-04 | | Pending |
-| CB-01 | | Pending |
-| CB-02 | | Pending |
-| CB-03 | | Pending |
-| CB-04 | | Pending |
-| STATUS-01 | | Pending |
-| STATUS-02 | | Pending |
-| STATUS-03 | | Pending |
-| STATUS-04 | | Pending |
-| CLI-01 | | Pending |
-| CLI-02 | | Pending |
-| CLI-03 | | Pending |
-| DI-01 | | Pending |
-| DI-02 | | Pending |
-| DI-03 | | Pending |
-| DI-04 | | Pending |
-| CFG-01 | | Pending |
-| CFG-02 | | Pending |
-| CFG-03 | | Pending |
+| ERR-01 | Phase 1 | Pending |
+| ERR-02 | Phase 1 | Pending |
+| ERR-03 | Phase 1 | Pending |
+| ERR-04 | Phase 1 | Pending |
+| CB-01 | Phase 2 | Pending |
+| CB-02 | Phase 2 | Pending |
+| CB-03 | Phase 2 | Pending |
+| CB-04 | Phase 2 | Pending |
+| STATUS-01 | Phase 2 | Pending |
+| STATUS-02 | Phase 2 | Pending |
+| STATUS-03 | Phase 2 | Pending |
+| STATUS-04 | Phase 5 | Pending |
+| CLI-01 | Phase 4 | Pending |
+| CLI-02 | Phase 4 | Pending |
+| CLI-03 | Phase 4 | Pending |
+| DI-01 | Phase 3 | Pending |
+| DI-02 | Phase 3 | Pending |
+| DI-03 | Phase 3 | Pending |
+| DI-04 | Phase 3 | Pending |
+| CFG-01 | Phase 1 | Pending |
+| CFG-02 | Phase 1 | Pending |
+| CFG-03 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22 ⚠️
+- Mapped to phases: 22
+- Unmapped: 0 ✅
 
 ---
 *Requirements defined: 2026-05-25*
