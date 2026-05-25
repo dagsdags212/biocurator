@@ -1,9 +1,19 @@
+import logging
 import time
 from pathlib import Path
 from typing import Iterator, Any, Callable
 
 from Bio import Entrez, SeqIO
+from Bio.SeqRecord import SeqRecord as BioSeqRecord
+from tenacity import (
+    Retrying,
+    before_sleep_log,
+    stop_after_attempt,
+    wait_exponential,
+)
 
+from biocurator.config.schema import RetryConfig
+from biocurator.exceptions import DatabaseSearchError
 from biocurator.providers.base import (
     DatabaseConfig,
     DatabaseSearcher,
@@ -14,7 +24,7 @@ from biocurator.providers.ncbi.criteria import NCBISearchCriteria
 from biocurator.providers.ncbi.query_builders import get_builder
 from biocurator.providers.registry import ProviderRegistry
 from biocurator.utils.logging import get_logger
-from biocurator.utils.network import retry
+from biocurator.utils.retryable_exceptions import RETRYABLE_PREDICATE
 
 logger = get_logger(__name__)
 
@@ -27,12 +37,40 @@ class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
         if config.api_key:
             Entrez.api_key = config.api_key
 
-    @retry(exceptions=(Exception,), max_attempts=3)
+    def _make_retryer(self) -> Retrying:
+        retry_cfg = (
+            self.config.retry.resolve() if self.config.retry else RetryConfig.defaults()
+        )
+        return Retrying(
+            stop=stop_after_attempt(retry_cfg.max_attempts),
+            wait=wait_exponential(
+                multiplier=retry_cfg.backoff_factor,
+                max=retry_cfg.max_delay,
+            ),
+            retry=RETRYABLE_PREDICATE,
+            reraise=True,
+            before_sleep=before_sleep_log(logger, logging.WARNING),
+        )
+
     def _safe_entrez_call(self, func: Callable, **kwargs) -> Any:
-        """Execute an Entrez call with retry logic."""
-        handle = func(**kwargs)
+        """Execute an Entrez HTTP call with retry logic.
+
+        Only the HTTP call (func(**kwargs)) is retried.
+        Parse errors from Entrez.read() are NOT retried.
+        """
+        retryer = self._make_retryer()
+        handle = retryer(func, **kwargs)
         try:
             return Entrez.read(handle)
+        finally:
+            handle.close()
+
+    def _fetch_single(self, params: dict) -> BioSeqRecord:
+        """Fetch a single sequence with retry. Parse outside retry."""
+        retryer = self._make_retryer()
+        handle = retryer(Entrez.efetch, **params)
+        try:
+            return SeqIO.read(handle, "fasta")
         finally:
             handle.close()
 
@@ -59,9 +97,10 @@ class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
 
             logger.info(f"Found {len(ids)} potential sequences (History Server active)")
             return ids
+        except DatabaseSearchError:
+            raise
         except Exception as exc:
-            logger.error(f"Error searching NCBI: {exc}")
-            return []
+            raise DatabaseSearchError(f"NCBI search error: {exc}") from exc
 
     def fetch_metadata(
         self, ids: list[str], criteria: NCBISearchCriteria | None = None
@@ -76,7 +115,6 @@ class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
         for i in range(0, count, self.config.batch_size):
             batch_size = min(self.config.batch_size, count - i)
             try:
-                # Use history server if available, otherwise fallback to ID list
                 params = {
                     "db": db,
                     "retstart": i,
@@ -138,16 +176,7 @@ class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
                 else:
                     params["id"] = ids[i]
 
-                # efetch doesn't work well with Entrez.read() for FASTA, so we handle it manually
-                @retry(exceptions=(Exception,), max_attempts=3)
-                def _fetch():
-                    handle = Entrez.efetch(**params)
-                    try:
-                        return SeqIO.read(handle, "fasta")
-                    finally:
-                        handle.close()
-
-                record = _fetch()
+                record = self._fetch_single(params)
 
                 yield SequenceRecord(
                     id=ids[i] if not (webenv and query_key) else record.id,

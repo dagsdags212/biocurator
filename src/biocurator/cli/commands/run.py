@@ -74,7 +74,7 @@ def run_command(
             )
         return
 
-    curator = Biocurator(email=global_config.email)
+    curator = Biocurator(email=global_config.email, global_retry=global_config.retry)
 
     summary_rows = []
 

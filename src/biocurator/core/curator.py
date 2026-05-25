@@ -13,6 +13,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional
 
+from biocurator.config.schema import RetryConfig
 from biocurator.providers import ProviderRegistry, DatabaseConfig, SearchCriteria
 from biocurator.providers.ncbi import NCBISearchCriteria
 from biocurator.providers.uniprot import UniProtSearchCriteria
@@ -26,7 +27,12 @@ logger = get_logger(__name__)
 class Biocurator:
     """Main Biocurator class for biological dataset curation."""
 
-    def __init__(self, email: str, outdir: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        email: str,
+        outdir: Optional[str] = None,
+        global_retry: RetryConfig | None = None,
+    ) -> None:
         """Initialize BioCurator.
 
         Parameters
@@ -35,23 +41,29 @@ class Biocurator:
             Email address for database access
         outdir : str, optional
             Output directory for results
+        global_retry : RetryConfig, optional
+            Global retry configuration from the config file
         """
         logger.info("Initializing Biocurator")
         self.email = email
         self.outdir = Path(outdir) if outdir else Path("biocurator_output")
+        self.global_retry = global_retry
         self.searchers: dict = {}
         self._init_database_searchers()
         logger.info("Biocurator initialization complete")
 
     def _init_database_searchers(self) -> None:
         logger.info("Initializing database searchers")
-        ncbi_cfg = DatabaseConfig(name="NCBI", rate_limit=0.3, batch_size=20)
+        ncbi_cfg = DatabaseConfig(
+            name="NCBI", rate_limit=0.3, batch_size=20, retry=self.global_retry
+        )
         self.searchers["ncbi"] = ProviderRegistry.get("ncbi", ncbi_cfg, self.email)
         uniprot_cfg = DatabaseConfig(
             name="UniProt",
             base_url="https://rest.uniprot.org",
             rate_limit=0.5,
             batch_size=25,
+            retry=self.global_retry,
         )
         self.searchers["uniprot"] = ProviderRegistry.get(
             "uniprot", uniprot_cfg, self.email
@@ -81,14 +93,29 @@ class Biocurator:
 
         export_config = job_config.export
         outdir = Path(export_config.outdir)
-        
-        with StreamingExporter(outdir, export_config.prefix, export_config.formats) as exporter:
+
+        with StreamingExporter(
+            outdir, export_config.prefix, export_config.formats
+        ) as exporter:
             for db_name in job_config.search.databases:
                 if db_name not in self.searchers:
                     logger.warning(f"Database '{db_name}' not configured, skipping")
                     continue
 
                 searcher = self.searchers[db_name]
+
+                base = (
+                    self.global_retry.resolve()
+                    if self.global_retry
+                    else RetryConfig.defaults()
+                )
+                per_db = (
+                    job_config.search.retry.get(db_name)
+                    if job_config.search.retry
+                    else None
+                )
+                searcher.config.retry = per_db.resolve(base) if per_db else base
+
                 search_cfg = job_config.search
                 filter_cfg = job_config.filter
 
@@ -109,6 +136,7 @@ class Biocurator:
                 )
                 if db_name == "ncbi":
                     from biocurator.providers.base import NCBIDatabase as _NCBIDb
+
                     criteria = NCBISearchCriteria(
                         database=_NCBIDb.NUCCORE, **common_kwargs
                     )
@@ -125,11 +153,13 @@ class Biocurator:
                     continue
 
                 # Stream metadata and filter
-                logger.info(f"Filtering metadata for {total_found} potential matches...")
+                logger.info(
+                    f"Filtering metadata for {total_found} potential matches..."
+                )
                 metadata_generator = searcher.fetch_metadata(ids, criteria)
-                
+
                 filtered_metadata_ids = []
-                
+
                 processed_count = 0
                 for record in metadata_generator:
                     processed_count += 1
@@ -137,30 +167,36 @@ class Biocurator:
                     passed = SequenceFilter.filter_by_criteria([record], criteria)
                     if passed:
                         filtered_metadata_ids.append(record.id)
-                    
+
                     if processed_count % 10 == 0 or processed_count == total_found:
                         _report("filter", processed_count, total_found)
-                
+
                 total_filtered = len(filtered_metadata_ids)
-                logger.info(f"Filtering complete: {total_filtered}/{total_found} records passed.")
+                logger.info(
+                    f"Filtering complete: {total_filtered}/{total_found} records passed."
+                )
 
                 if not filtered_metadata_ids:
                     continue
 
                 # Stream download and final quality check
                 logger.info(f"Downloading {total_filtered} filtered sequences...")
-                download_generator = searcher.download(filtered_metadata_ids, outdir, criteria)
-                
+                download_generator = searcher.download(
+                    filtered_metadata_ids, outdir, criteria
+                )
+
                 download_count = 0
                 for seq_record in download_generator:
                     download_count += 1
                     # Apply sequence-level quality filter
                     if criteria.quality_threshold:
-                        passed = SequenceFilter.apply_quality_filter([seq_record], criteria.quality_threshold)
+                        passed = SequenceFilter.apply_quality_filter(
+                            [seq_record], criteria.quality_threshold
+                        )
                         if not passed:
                             _report("download", download_count, total_filtered)
                             continue
-                    
+
                     # Write to disk immediately
                     exporter.write_record(seq_record)
                     _report("download", download_count, total_filtered)
@@ -168,4 +204,3 @@ class Biocurator:
             return exporter.get_output_files()
 
     # _export is no longer needed as StreamingExporter handles it.
-
