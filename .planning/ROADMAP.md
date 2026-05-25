@@ -117,6 +117,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. 01-VERIFICATION.md exists and confirms ERR-01..04 and CFG-01 are satisfied with code evidence
   2. 04-VERIFICATION.md exists and confirms CLI-01..03 are satisfied with code evidence
+**Plans**: 2 plans in 1 wave
+
+Plans:
+- [ ] 06-01-PLAN.md — Audit Phase 01 codebase and create 01-VERIFICATION.md (ERR-01, ERR-02, ERR-03, ERR-04, CFG-01)
+- [ ] 06-02-PLAN.md — Audit Phase 04 codebase and create 04-VERIFICATION.md (CLI-01, CLI-02, CLI-03)
 
 ### Phase 7: Circuit Breaker Critical Fixes
 **Goal**: Fix three blocking bugs found by the milestone audit — breaker_state returns object repr, main curator loses global_breaker, and status display is broken
