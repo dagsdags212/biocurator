@@ -81,8 +81,8 @@ Existing codebase at v0.2.0 with ~5,000 files. Key architectural traits:
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Checksum on download + verify on re-run | Catches both download corruption and storage bit-rot | — Pending |
-| Per-job manifest files | Associates checksums with specific curation runs for traceability | — Pending |
+| Checksum on download + verify on re-run | Catches both download corruption and storage bit-rot | Validated in Phase 3 — SHA-256 computed incrementally during streaming export |
+| Per-job manifest files | Associates checksums with specific curation runs for traceability | Validated in Phase 3 — manifest.json + manifest-sha256.txt written by StreamingExporter |
 | Circuit breaker over infinite retry | Prevents hammering a downed server and gives fast feedback | — Pending |
 | Server status as CLI command + pre-flight check | Lets users probe before running and optionally auto-check | — Pending |
 
@@ -104,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 after Phase 2 execution*
+*Last updated: 2026-05-26 after Phase 3 execution*
