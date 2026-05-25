@@ -15,13 +15,13 @@
 ### Circuit Breaker
 
 - [X] **CB-01**: Add per-provider circuit breaker that prevents cascading failures when a server is down
-- [ ] **CB-02**: Integrate circuit breaker with existing provider layer — wrap searcher public methods
+- [x] **CB-02**: Integrate circuit breaker with existing provider layer — wrap searcher public methods
 - [X] **CB-03**: Add circuit breaker configuration to `DatabaseConfig` — failure threshold, recovery timeout, half-open max retries
-- [ ] **CB-04**: Expose circuit breaker state for observability (CLI status command and logs)
+- [x] **CB-04**: Expose circuit breaker state for observability (CLI status command and logs)
 
 ### Health Checks & CLI Status
 
-- [ ] **STATUS-01**: Build `HealthChecker` that probes NCBI Entrez and UniProt REST API availability
+- [x] **STATUS-01**: Build `HealthChecker` that probes NCBI Entrez and UniProt REST API availability
 - [ ] **STATUS-02**: `biocurator status` command — probe all configured providers and report health per-provider
 - [ ] **STATUS-03**: Show circuit breaker state in status output (open/closed/half-open counts)
 - [ ] **STATUS-04**: Optionally run health check as pre-flight before job execution (`biocurator run --check`)
@@ -80,10 +80,10 @@
 | ERR-03 | Phase 1 | Pending |
 | ERR-04 | Phase 1 | Pending |
 | CB-01 | Phase 2 | Complete |
-| CB-02 | Phase 2 | Pending |
+| CB-02 | Phase 2 | Complete |
 | CB-03 | Phase 2 | Complete |
-| CB-04 | Phase 2 | Pending |
-| STATUS-01 | Phase 2 | Pending |
+| CB-04 | Phase 2 | Complete |
+| STATUS-01 | Phase 2 | Complete |
 | STATUS-02 | Phase 2 | Pending |
 | STATUS-03 | Phase 2 | Pending |
 | STATUS-04 | Phase 5 | Pending |

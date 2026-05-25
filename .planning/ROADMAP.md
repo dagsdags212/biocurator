@@ -45,7 +45,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — BreakerConfig Foundation (config schema, pybreaker, loader parsing)
-- [ ] 02-02-PLAN.md — Circuit Breaker + HealthChecker Integration (searcher wrapping, HealthChecker, curator wiring)
+- [x] 02-02-PLAN.md — Circuit Breaker + HealthChecker Integration (searcher wrapping, HealthChecker, curator wiring)
 - [ ] 02-03-PLAN.md — biocurator status CLI Command (Rich table, health probes, breaker state display)
 
 ### Phase 3: Checksums & Manifests
@@ -91,7 +91,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Error Handling & Retry Foundation | 3/3 | Complete | 2026-05-25 |
-| 2. Circuit Breaker & Health Status | 1/3 | In progress | - |
+| 2. Circuit Breaker & Health Status | 2/3 | In Progress|  |
 | 3. Checksums & Manifests | 0/0 | Not started | - |
 | 4. CLI Jobs & Files Commands | 0/0 | Not started | - |
 | 5. Pre-flight Check & Integration | 0/0 | Not started | - |
