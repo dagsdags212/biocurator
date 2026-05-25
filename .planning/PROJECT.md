@@ -24,19 +24,25 @@ Reliably download verified biological sequence data from public databases with a
 - ✓ Rate limiting: configurable per-provider delay between requests — existing
 - ✓ Provider registry: plugin-style `ProviderRegistry` for discovering searchers — existing
 - ✓ CI via GitHub Actions: tests on push/PR, publish on release — existing
+- ✓ Retry via tenacity: per-provider `RetryConfig` with max_attempts, backoff_factor, max_delay, timeout — Phase 1
+- ✓ Narrow exception targeting: network errors retried, data/parse errors not — Phase 1
+- ✓ Circuit breaker: per-provider pybreaker wrapping searcher public methods — Phase 2
+- ✓ BreakerConfig: fail_max, recovery_timeout, half_open_max_successes in DatabaseConfig — Phase 2
+- ✓ HealthChecker: NCBI Entrez and UniProt REST API availability probes — Phase 2
+- ✓ `biocurator status` CLI: Rich table with Provider, Status, Response Time, Breaker State — Phase 2
 
 ### Active
 
 #### Reliability
 
-- [ ] **RELIAB-01**: Fix silent error swallowing in `NCBISearcher` and `UniProtSearcher` — exceptions should propagate or be surfaced clearly, not return empty results
-- [ ] **RELIAB-02**: Add granular, configurable retry settings per provider (max attempts, backoff factor, timeout) in `DatabaseConfig`
-- [ ] **RELIAB-03**: Add circuit breaker pattern to prevent cascading failures when a server is down
-- [ ] **RELIAB-04**: Add server health check endpoint reachable via CLI command and optionally before job execution
+- ✓ **RELIAB-01**: Fixed silent error swallowing in `NCBISearcher` and `UniProtSearcher` — exceptions propagate via `DatabaseSearchError` — Phase 1
+- ✓ **RELIAB-02**: Granular, configurable retry settings per provider (max_attempts, backoff_factor, max_delay, timeout) in `DatabaseConfig` — Phase 1
+- ✓ **RELIAB-03**: Circuit breaker pattern to prevent cascading failures when a server is down — Phase 2
+- ✓ **RELIAB-04**: Server health check endpoint via `biocurator status` CLI — Phase 2
 
 #### CLI Commands
 
-- [ ] **CLI-01**: `biocurator status` — probe NCBI/UniProt API availability and report status
+- ✓ **CLI-01**: `biocurator status` — probe NCBI/UniProt API availability and report status — Phase 2
 - [ ] **CLI-02**: `biocurator jobs [config.yaml]` — list available jobs from a config file with descriptions
 - [ ] **CLI-03**: `biocurator files [job_name]` — list downloaded files with per-job manifest metadata
 
@@ -98,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-25 after initialization*
+*Last updated: 2026-05-25 after Phase 2 execution*
