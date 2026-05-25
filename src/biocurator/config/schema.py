@@ -121,6 +121,7 @@ class SearchConfig:
     taxonomy_filter: str | None = None
     retry: dict[str, RetryConfig] | None = None
     breaker: dict[str, BreakerConfig] | None = None
+    preflight_check: bool = False
 
 
 @dataclass
