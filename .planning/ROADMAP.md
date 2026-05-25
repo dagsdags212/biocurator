@@ -147,6 +147,11 @@ Plans:
   2. `run_job()` merge properly recreates `_breaker` instances when config changes (per-db breakers work)
   3. Breaker-related code has test coverage (BreakerConfig, `_init_breaker()`, `breaker_state`, `HealthChecker`, `status_command`)
   4. Preview curator receives retry and breaker config so preview benefits from configured reliability
+**Plans**: 2 plans in 1 wave
+
+Plans:
+- [ ] 08-01-PLAN.md — Preview wiring + BreakerConfig tests + preview regression test (CB-01)
+- [ ] 08-02-PLAN.md — _init_breaker() tests + HealthChecker tests + status_command tests (CB-03)
 
 ### Phase 9: Checksums Code Review Fixes
 **Goal**: Fix 5 code review findings from Phase 03 checksums/manifests implementation
@@ -182,6 +187,6 @@ Plans:
 | 5. Pre-flight Check & Integration | 2/2 | Complete   | 2026-05-25 |
 | 6. Retrospective Verification | 0/0 | Planned | — |
 | 7. Circuit Breaker Critical Fixes | 1/1 | Complete   | 2026-05-25 |
-| 8. Circuit Breaker Tech Debt Cleanup | 0/0 | Planned | — |
+| 8. Circuit Breaker Tech Debt Cleanup | 0/2 | Planned | — |
 | 9. Checksums Code Review Fixes | 0/0 | Planned | — |
 | 10. Cleanup & Polish | 0/0 | Planned | — |
