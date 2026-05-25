@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Generic, TypeVar, Iterator
 
-from biocurator.config.schema import RetryConfig
+from biocurator.config.schema import BreakerConfig, RetryConfig
 
 
 class NCBIDatabase(str, Enum):
@@ -102,6 +102,7 @@ class DatabaseConfig:
     batch_size: int = 20
     timeout: int = 30
     retry: RetryConfig | None = None
+    breaker: BreakerConfig | None = None
 
 
 @dataclass

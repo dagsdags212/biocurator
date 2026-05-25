@@ -120,6 +120,7 @@ class SearchConfig:
     location: str | None = None
     taxonomy_filter: str | None = None
     retry: dict[str, RetryConfig] | None = None
+    breaker: dict[str, BreakerConfig] | None = None
 
 
 @dataclass
@@ -150,3 +151,4 @@ class GlobalConfig:
     email: str
     jobs: list[JobConfig]
     retry: RetryConfig | None = None
+    breaker: BreakerConfig | None = None

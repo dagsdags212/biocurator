@@ -1,6 +1,7 @@
 from pathlib import Path
 import yaml
 from biocurator.config.schema import (
+    BreakerConfig,
     ExportConfig,
     FilterConfig,
     GlobalConfig,
@@ -37,7 +38,11 @@ class ConfigLoader:
         jobs = [ConfigLoader._parse_job(name, job) for name, job in raw_jobs.items()]
         raw_retry = data.get("retry")
         retry_cfg = RetryConfig.from_dict(raw_retry) if raw_retry else None
-        return GlobalConfig(email=email, jobs=jobs, retry=retry_cfg)
+        raw_breaker = data.get("breaker")
+        breaker_cfg = BreakerConfig.from_dict(raw_breaker) if raw_breaker else None
+        return GlobalConfig(
+            email=email, jobs=jobs, retry=retry_cfg, breaker=breaker_cfg
+        )
 
     @staticmethod
     def _parse_job(name: str, data: dict) -> JobConfig:
@@ -69,6 +74,13 @@ class ConfigLoader:
             for db_name, db_retry_cfg in raw_job_retry.items():
                 per_db_retry[db_name] = RetryConfig.from_dict(db_retry_cfg)
             search_cfg.retry = per_db_retry
+
+        raw_job_breaker = search_data.get("breaker")
+        if raw_job_breaker and isinstance(raw_job_breaker, dict):
+            per_db_breaker = {}
+            for db_name, db_breaker_cfg in raw_job_breaker.items():
+                per_db_breaker[db_name] = BreakerConfig.from_dict(db_breaker_cfg)
+            search_cfg.breaker = per_db_breaker
 
         filter_cfg = FilterConfig(
             min_length=filter_data.get("min_length"),
