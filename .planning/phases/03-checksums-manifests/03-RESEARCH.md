@@ -433,7 +433,7 @@ def compute_file_sha256(path):
 | A4 | Manifest-sha256.txt format with double-space works with all common `sha256sum` implementations (GNU coreutils, BusyBox, macOS `shasum -a 256`) | Architecture Patterns | `sha256sum -c` verification fails on non-GNU platforms — MEDIUM risk, tested only on GNU coreutils; macOS uses `shasum -a 256 -c` which has different format expectations |
 | A5 | `hashlib.file_digest()` is available in the runtime Python (3.13+) | Code Examples | `AttributeError` in verify function — LOW risk, fallback to manual `open() + read() + update()` pattern works on all Python versions |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **CSV hashing strategy: pre-buffer vs hash written bytes?**
    - What we know: Pre-buffer (serialize to StringIO, hash, then write same bytes) produces identical hashes to re-reading from disk. Hash written bytes (capture return value of to_csv) isn't possible because to_csv writes directly to the file handle.
