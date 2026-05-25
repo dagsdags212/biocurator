@@ -9,7 +9,6 @@ sequence search, download, filtering, and organization.
 © Jan Emmanuel Samson (2026-)
 """
 
-import pandas as pd
 from pathlib import Path
 from typing import Optional
 
@@ -59,6 +58,8 @@ class Biocurator:
 
     def _init_database_searchers(self) -> None:
         logger.info("Initializing database searchers")
+
+        # Initialize NCBI provider
         ncbi_cfg = DatabaseConfig(
             name="NCBI",
             rate_limit=0.3,
@@ -67,6 +68,8 @@ class Biocurator:
             breaker=self.global_breaker,
         )
         self.searchers["ncbi"] = ProviderRegistry.get("ncbi", ncbi_cfg, self.email)
+
+        # Initialize UniProt provider
         uniprot_cfg = DatabaseConfig(
             name="UniProt",
             base_url="https://rest.uniprot.org",
@@ -163,6 +166,7 @@ class Biocurator:
 
                 searcher = self.searchers[db_name]
 
+                # Set retry rules based on priority (per job > global > defaults)
                 base = (
                     self.global_retry.resolve()
                     if self.global_retry
@@ -192,16 +196,6 @@ class Biocurator:
                     else base_breaker
                 )
                 searcher._breaker = searcher._init_breaker()
-                per_db_breaker = (
-                    job_config.search.breaker.get(db_name)
-                    if job_config.search and job_config.search.breaker
-                    else None
-                )
-                searcher.config.breaker = (
-                    per_db_breaker.resolve(base_breaker)
-                    if per_db_breaker
-                    else base_breaker
-                )
 
                 search_cfg = job_config.search
                 filter_cfg = job_config.filter
