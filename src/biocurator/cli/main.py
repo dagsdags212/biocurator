@@ -19,6 +19,7 @@ console = Console()
 logger = get_logger(__name__)
 
 
+from biocurator.cli.commands.files import files_command
 from biocurator.cli.commands.init import init_command
 from biocurator.cli.commands.jobs import jobs_command
 from biocurator.cli.commands.run import run_command
@@ -47,6 +48,7 @@ app.command("run")(run_command)
 app.command("preview")(preview_command)
 app.command("status")(status_command)
 app.command("jobs")(jobs_command)
+app.command("files")(files_command)
 
 
 # Utility functions for rich output
