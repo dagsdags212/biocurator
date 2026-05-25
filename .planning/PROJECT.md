@@ -32,6 +32,9 @@ Reliably download verified biological sequence data from public databases with a
 - ✓ `biocurator status` CLI: Rich table with Provider, Status, Response Time, Breaker State — Phase 2
 - ✓ Pre-flight check config toggle: `search.preflight_check: true/false` in YAML (CFG-03) — Phase 5
 - ✓ Pre-flight health check CLI: `biocurator run --check`/`--no-check` probes providers before job execution (STATUS-04) — Phase 5
+- ✓ Circuit breaker global wiring: `global_breaker` correctly passed to main curator path (BREAK-01 fix) — Phase 7
+- ✓ `breaker_state` returns human-readable `'closed'/'open'/'half_open'` strings (CB-04) — Phase 7
+- ✓ `biocurator status` displays color-coded breaker state names (STATUS-03) — Phase 7
 
 ### Active
 
@@ -85,8 +88,8 @@ Existing codebase at v0.2.0 with ~5,000 files. Key architectural traits:
 |----------|-----------|---------|
 | Checksum on download + verify on re-run | Catches both download corruption and storage bit-rot | Validated in Phase 3 — SHA-256 computed incrementally during streaming export |
 | Per-job manifest files | Associates checksums with specific curation runs for traceability | Validated in Phase 3 — manifest.json + manifest-sha256.txt written by StreamingExporter |
-| Circuit breaker over infinite retry | Prevents hammering a downed server and gives fast feedback | — Pending |
-| Server status as CLI command + pre-flight check | Lets users probe before running and optionally auto-check | — Pending |
+| Circuit breaker over infinite retry | Prevents hammering a downed server and gives fast feedback | Validated in Phase 2 — per-provider pybreaker; Phase 7 — BREAK-01 global_breaker wiring fix |
+| Server status as CLI command + pre-flight check | Lets users probe before running and optionally auto-check | Validated in Phase 2 — `biocurator status` CLI; Phase 5 — pre-flight `--check` integration |
 
 ## Evolution
 
@@ -106,4 +109,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 after Phase 5 execution*
+*Last updated: 2026-05-26 after Phase 7 execution*
