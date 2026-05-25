@@ -13,7 +13,7 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional
 
-from biocurator.config.schema import RetryConfig
+from biocurator.config.schema import BreakerConfig, RetryConfig
 from biocurator.providers import ProviderRegistry, DatabaseConfig, SearchCriteria
 from biocurator.providers.ncbi import NCBISearchCriteria
 from biocurator.providers.uniprot import UniProtSearchCriteria
@@ -32,6 +32,7 @@ class Biocurator:
         email: str,
         outdir: Optional[str] = None,
         global_retry: RetryConfig | None = None,
+        global_breaker: BreakerConfig | None = None,
     ) -> None:
         """Initialize BioCurator.
 
@@ -43,11 +44,14 @@ class Biocurator:
             Output directory for results
         global_retry : RetryConfig, optional
             Global retry configuration from the config file
+        global_breaker : BreakerConfig, optional
+            Global circuit breaker configuration from the config file
         """
         logger.info("Initializing Biocurator")
         self.email = email
         self.outdir = Path(outdir) if outdir else Path("biocurator_output")
         self.global_retry = global_retry
+        self.global_breaker = global_breaker
         self.searchers: dict = {}
         self._init_database_searchers()
         logger.info("Biocurator initialization complete")
@@ -55,7 +59,11 @@ class Biocurator:
     def _init_database_searchers(self) -> None:
         logger.info("Initializing database searchers")
         ncbi_cfg = DatabaseConfig(
-            name="NCBI", rate_limit=0.3, batch_size=20, retry=self.global_retry
+            name="NCBI",
+            rate_limit=0.3,
+            batch_size=20,
+            retry=self.global_retry,
+            breaker=self.global_breaker,
         )
         self.searchers["ncbi"] = ProviderRegistry.get("ncbi", ncbi_cfg, self.email)
         uniprot_cfg = DatabaseConfig(
@@ -64,6 +72,7 @@ class Biocurator:
             rate_limit=0.5,
             batch_size=25,
             retry=self.global_retry,
+            breaker=self.global_breaker,
         )
         self.searchers["uniprot"] = ProviderRegistry.get(
             "uniprot", uniprot_cfg, self.email
@@ -115,6 +124,23 @@ class Biocurator:
                     else None
                 )
                 searcher.config.retry = per_db.resolve(base) if per_db else base
+
+                # Merge breaker config: per-database override > global > pybreaker defaults
+                base_breaker = (
+                    self.global_breaker.resolve()
+                    if self.global_breaker
+                    else BreakerConfig.defaults()
+                )
+                per_db_breaker = (
+                    job_config.search.breaker.get(db_name)
+                    if job_config.search and job_config.search.breaker
+                    else None
+                )
+                searcher.config.breaker = (
+                    per_db_breaker.resolve(base_breaker)
+                    if per_db_breaker
+                    else base_breaker
+                )
 
                 search_cfg = job_config.search
                 filter_cfg = job_config.filter
