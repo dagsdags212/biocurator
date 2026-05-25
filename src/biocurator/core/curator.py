@@ -149,7 +149,12 @@ class Biocurator:
         outdir = Path(export_config.outdir)
 
         with StreamingExporter(
-            outdir, export_config.prefix, export_config.formats
+            outdir,
+            export_config.prefix,
+            export_config.formats,
+            job_name=job_config.name,
+            databases=job_config.search.databases,
+            job_config=job_config,
         ) as exporter:
             for db_name in job_config.search.databases:
                 if db_name not in self.searchers:
@@ -283,6 +288,11 @@ class Biocurator:
                     exporter.write_record(seq_record)
                     _report("download", download_count, total_filtered)
 
-            return exporter.get_output_files()
+            output_files = exporter.get_output_files()
+            if (outdir / "manifest.json").exists():
+                output_files["manifest"] = outdir / "manifest.json"
+            if (outdir / "manifest-sha256.txt").exists():
+                output_files["manifest_sha256"] = outdir / "manifest-sha256.txt"
+            return output_files
 
     # _export is no longer needed as StreamingExporter handles it.
