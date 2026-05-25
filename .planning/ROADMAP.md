@@ -9,7 +9,7 @@ Take a working-but-fragile bioinformatics CLI tool (silent error swallowing, cus
 - [ ] **Phase 1: Error Handling & Retry Foundation** - Fix silent error swallowing, migrate to tenacity retry, add per-provider retry config to schema
 - [x] **Phase 2: Circuit Breaker & Health Status** - Per-provider circuit breakers, `biocurator status` command with health probes and breaker state (completed 2026-05-25)
 - [x] **Phase 3: Checksums & Manifests** - SHA-256 checksums during streaming export, per-job manifest files with provenance metadata (completed 2026-05-25)
-- [ ] **Phase 4: CLI Jobs & Files Commands** - `biocurator jobs`, `biocurator files`, and `files --verify` for data integrity verification
+- [x] **Phase 4: CLI Jobs & Files Commands** - `biocurator jobs`, `biocurator files`, and `files --verify` for data integrity verification (completed 2026-05-26)
 - [ ] **Phase 5: Pre-flight Check & Integration** - `biocurator run --check`, config pre-flight toggle, end-to-end reliability integration
 
 ## Phase Details
@@ -109,5 +109,5 @@ Plans:
 | 1. Error Handling & Retry Foundation | 3/3 | Complete | 2026-05-25 |
 | 2. Circuit Breaker & Health Status | 3/3 | Complete   | 2026-05-25 |
 | 3. Checksums & Manifests | 2/2 | Complete   | 2026-05-25 |
-| 4. CLI Jobs & Files Commands | 0/3 | Planned | - |
+| 4. CLI Jobs & Files Commands | 3/3 | Complete | 2026-05-26 |
 | 5. Pre-flight Check & Integration | 0/0 | Not started | - |

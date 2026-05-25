@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: planning
+status: active
 stopped_at: ""
-last_updated: "2026-05-26T01:10:00.000Z"
+last_updated: "2026-05-26T12:00:00.000Z"
 last_activity: 2026-05-26
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 14
-  completed_plans: 8
-  percent: 44
+  completed_plans: 11
+  percent: 73
 ---
 
 # Project State
@@ -21,24 +21,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-25)
 
 **Core value:** Reliably download verified biological sequence data from public databases with a single CLI command, even across intermittent network failures.
-**Current focus:** Phase 4 — cli jobs & files commands
+**Current focus:** Phase 5 — pre-flight check & integration
 
 ## Current Position
 
-Phase: 4
-Plan: Ready to execute (3 plans in 2 waves)
-Status: Ready to execute
+Phase: 4 complete → Phase 5 next
+Plan: All 3 plans complete
+Status: Phase 4 complete, Phase 5 pending plan
 Last activity: 2026-05-26
 
-Progress: [████████░░] 40%
+Progress: [████████████████░░░░] 73%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 8
+- Total plans completed: 11
 - Average duration: ~10 min
-- Total execution time: ~0.6 hours
+- Total execution time: ~1.1 hours
 
 **By Phase:**
 
@@ -46,11 +46,12 @@ Progress: [████████░░] 40%
 |-------|-------|-------|----------|
 | 1. Error Handling & Retry Foundation | 3 | 3 | ~8 min |
 | 2. Circuit Breaker & Health Status | 3 | 3 | ~9 min |
-| 03 | 2 | - | - |
+| 3. Checksums & Manifests | 2 | 2 | ~12 min |
+| 4. CLI Jobs & Files Commands | 3 | 3 | ~10 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 02-03, 02-02, 02-01
+- Last 5 plans: 04-03, 04-02, 04-01, 03-02, 03-01
 - Trend: Consistent ~8-12 min per plan
 
 *Updated after each plan completion*
@@ -77,6 +78,7 @@ None yet.
 ### Blockers/Concerns
 
 - Verification found 3 gaps in Phase 2 implementation (breaker_state repr, missing success_threshold param, merge not recreating pybreaker instance) — all fixed and verified.
+- Phase 4 note: default config filename is `biocurator_config.yaml` (not `config.yaml`) per plan spec; consistent across jobs and files commands.
 
 ## Deferred Items
 
@@ -88,6 +90,6 @@ Items acknowledged and carried forward from previous milestone close:
 
 ## Session Continuity
 
-Last session: 2026-05-25T16:30:36.986Z
-Stopped at: context exhaustion at 76% (2026-05-25)
+Last session: 2026-05-26T12:00:00.000Z
+Stopped at: Phase 4 complete
 Resume file: None
