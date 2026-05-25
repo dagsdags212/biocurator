@@ -21,3 +21,6 @@ docs/
 *.fna
 *.csv
 results/
+asfv_results
+pytest-of-dagsdags/
+uv-*.lock
