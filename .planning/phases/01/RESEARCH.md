@@ -795,21 +795,22 @@ After this phase, `DatabaseConfig` gets `retry: RetryConfig | None = None`. The 
 | A3 | Bio.Entrez.read() raises non-retryable parse errors on malformed XML | Exception Classification | LOW — parse errors are deterministic per response; retrying won't help |
 | A4 | Entrez.efetch().close() is safe to call after read | NCBI call site split | LOW — standard Biopython pattern; `Handle` object's `close()` is safe |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Tenacity decorator vs. `Retrying` class for runtime config?**
    - What we know: tenacity supports both `@retry` with `retry_with()` for override, and `Retrying` class for dynamic construction
-   - What's unclear: Which pattern is cleaner for the searcher class where config is known at `__init__` time but `retry_with()` adds runtime flexibility
-   - Recommendation: Use `@retry` decorator with sensible defaults at module level, then call `self._safe_get.retry_with(...)` in `__init__` with the config. This keeps the function signature visible and allows test-time override.
+   - Recommendation: Use `Retrying` class for all 3 call sites — it's cleaner for runtime config from `_safe_entrez_call`/`_safe_get`/`_fetch_single` since config is known per-call. `@retry` with `retry_with()` adds complexity for no benefit here.
+   - **RESOLVED: Use `Retrying` class directly in all 3 call sites. Config passed at construction time from `self.config.retry`.**
 
 2. **Where to put `RetryConfig`?**
    - Options: `config/schema.py` (co-located with other schema types), `config/retry_config.py` (separate module), `providers/base.py` (near DatabaseConfig)
    - Recommendation: Put it in `config/schema.py` to keep all schema types in one place, since it's a configuration model. Import it in `providers/base.py` for `DatabaseConfig.retry`.
+   - **RESOLVED: `RetryConfig` in `config/schema.py`.**
 
 3. **How to handle the inline `_fetch()` closure?**
    - What we know: It's defined inside the `for` loop in `download()`. A `@retry` decorator with static params won't see per-loop variable changes.
-   - What's unclear: Can we refactor it to a method-level helper or use `Retrying` directly?
    - Recommendation: Refactor to a `_fetch_single` method, use tenacity via `Retrying` class with `self.config.retry` params.
+   - **RESOLVED: Refactor to `_fetch_single` method using `Retrying` class.**
 
 ## Environment Availability
 
