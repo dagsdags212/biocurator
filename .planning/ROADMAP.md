@@ -102,7 +102,7 @@ Plans:
 
 Plans:
 - [x] 05-01-PLAN.md — Config schema + parser for preflight_check (SearchConfig field, ConfigLoader parsing, tests)
-- [ ] 05-02-PLAN.md — Pre-flight health check in run command (--check/--no-check flags, health probes, Rich table, interactive prompt, tests)
+- [x] 05-02-PLAN.md — Pre-flight health check in run command (--check/--no-check flags, health probes, Rich table, interactive prompt, tests)
 
 ## Progress
 
@@ -114,4 +114,4 @@ Plans:
 | 2. Circuit Breaker & Health Status | 3/3 | Complete   | 2026-05-25 |
 | 3. Checksums & Manifests | 2/2 | Complete   | 2026-05-25 |
 | 4. CLI Jobs & Files Commands | 3/3 | Complete | 2026-05-26 |
-| 5. Pre-flight Check & Integration | 1/2 | In Progress|  |
+| 5. Pre-flight Check & Integration | 2/2 | Complete   | 2026-05-25 |
