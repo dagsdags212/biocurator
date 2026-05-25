@@ -1,3 +1,4 @@
+import json
 import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -60,3 +61,17 @@ def test_run_job_streaming(tmp_path, mock_sequence):
     json_path = Path(results["json"])
     assert json_path.exists()
     assert "NC_012345.1" in json_path.read_text()
+
+    # Manifest assertions
+    manifest_path = outdir / "manifest.json"
+    assert manifest_path.exists()
+    manifest = json.loads(manifest_path.read_text())
+    assert manifest["job_name"] == "test-job"
+    # total_records sums per-format counts (fasta + csv + json = 3 for 1 record across 3 formats)
+    assert manifest["stats"]["total_records"] >= 1
+
+    sha256sum_path = outdir / "manifest-sha256.txt"
+    assert sha256sum_path.exists()
+
+    assert "manifest" in results
+    assert "manifest_sha256" in results

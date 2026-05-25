@@ -289,10 +289,13 @@ class Biocurator:
                     _report("download", download_count, total_filtered)
 
             output_files = exporter.get_output_files()
-            if (outdir / "manifest.json").exists():
-                output_files["manifest"] = outdir / "manifest.json"
-            if (outdir / "manifest-sha256.txt").exists():
-                output_files["manifest_sha256"] = outdir / "manifest-sha256.txt"
-            return output_files
+
+        # _write_manifest() runs in close() which is called by __exit__ above.
+        # Check for manifest files after the context manager has fully closed.
+        if (outdir / "manifest.json").exists():
+            output_files["manifest"] = outdir / "manifest.json"
+        if (outdir / "manifest-sha256.txt").exists():
+            output_files["manifest_sha256"] = outdir / "manifest-sha256.txt"
+        return output_files
 
     # _export is no longer needed as StreamingExporter handles it.
