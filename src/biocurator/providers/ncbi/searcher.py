@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 from typing import Iterator, Any, Callable
 
+import pybreaker
 from Bio import Entrez, SeqIO
 from Bio.SeqRecord import SeqRecord as BioSeqRecord
 from tenacity import (
@@ -36,6 +37,11 @@ class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
         Entrez.tool = "Biocurator"
         if config.api_key:
             Entrez.api_key = config.api_key
+        self._breaker = self._init_breaker()
+        if self._breaker:
+            logger.info(
+                f"Circuit breaker initialized for NCBI: fail_max={self._breaker.fail_max}"
+            )
 
     def _make_retryer(self) -> Retrying:
         retry_cfg = (
@@ -77,32 +83,35 @@ class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
     def build_query(self, criteria: NCBISearchCriteria) -> str:
         return get_builder(criteria.database).build(criteria)
 
+    def _do_search(self, criteria: NCBISearchCriteria, query: str) -> list[str]:
+        results = self._safe_entrez_call(
+            Entrez.esearch,
+            db=criteria.database,
+            term=query,
+            retmax=criteria.max_results,
+            sort="relevance",
+            usehistory="y",
+        )
+        ids = results.get("IdList", [])
+        criteria.webenv = results.get("WebEnv")
+        criteria.query_key = results.get("QueryKey")
+        logger.info(f"Found {len(ids)} potential sequences (History Server active)")
+        return ids
+
     def search(self, criteria: NCBISearchCriteria) -> list[str]:
         logger.info(f"Searching NCBI {criteria.database} database...")
         query = self.build_query(criteria)
         logger.info(f"Search query: {query}")
         try:
-            results = self._safe_entrez_call(
-                Entrez.esearch,
-                db=criteria.database,
-                term=query,
-                retmax=criteria.max_results,
-                sort="relevance",
-                usehistory="y",
-            )
-
-            ids = results.get("IdList", [])
-            criteria.webenv = results.get("WebEnv")
-            criteria.query_key = results.get("QueryKey")
-
-            logger.info(f"Found {len(ids)} potential sequences (History Server active)")
-            return ids
+            if self._breaker:
+                return self._breaker.call(self._do_search, criteria, query)
+            return self._do_search(criteria, query)
         except DatabaseSearchError:
             raise
         except Exception as exc:
             raise DatabaseSearchError(f"NCBI search error: {exc}") from exc
 
-    def fetch_metadata(
+    def _do_fetch_metadata(
         self, ids: list[str], criteria: NCBISearchCriteria | None = None
     ) -> Iterator[SequenceRecord]:
         db = criteria.database if criteria else NCBIDatabase.NUCCORE
@@ -147,7 +156,19 @@ class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
                     f"Error fetching metadata for batch {i // self.config.batch_size + 1}: {exc}"
                 )
 
-    def download(
+    def fetch_metadata(
+        self, ids: list[str], criteria: NCBISearchCriteria | None = None
+    ) -> Iterator[SequenceRecord]:
+        try:
+            if self._breaker:
+                return self._breaker.call(self._do_fetch_metadata, ids, criteria)
+            return self._do_fetch_metadata(ids, criteria)
+        except DatabaseSearchError:
+            raise
+        except Exception as exc:
+            raise DatabaseSearchError(f"NCBI metadata fetch failed: {exc}") from exc
+
+    def _do_download(
         self, ids: list[str], outdir: Path, criteria: NCBISearchCriteria | None = None
     ) -> Iterator[SequenceRecord]:
         db = criteria.database if criteria else NCBIDatabase.NUCCORE
@@ -191,6 +212,18 @@ class NCBISearcher(DatabaseSearcher[NCBISearchCriteria]):
                 time.sleep(self.config.rate_limit)
             except Exception as exc:
                 logger.warning(f"Failed to download sequence at index {i}: {exc}")
+
+    def download(
+        self, ids: list[str], outdir: Path, criteria: NCBISearchCriteria | None = None
+    ) -> Iterator[SequenceRecord]:
+        try:
+            if self._breaker:
+                return self._breaker.call(self._do_download, ids, outdir, criteria)
+            return self._do_download(ids, outdir, criteria)
+        except DatabaseSearchError:
+            raise
+        except Exception as exc:
+            raise DatabaseSearchError(f"NCBI download failed: {exc}") from exc
 
 
 ProviderRegistry.register("ncbi", NCBISearcher)

@@ -4,6 +4,7 @@ from io import StringIO
 from pathlib import Path
 from typing import Iterator
 
+import pybreaker
 from requests import Session
 
 from Bio import SeqIO
@@ -33,6 +34,11 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
         super().__init__(config, email)
         self._base_url = "https://rest.uniprot.org"
         self.session = Session()
+        self._breaker = self._init_breaker()
+        if self._breaker:
+            logger.info(
+                f"Circuit breaker initialized for UniProt: fail_max={self._breaker.fail_max}"
+            )
 
     def _make_retryer(self) -> Retrying:
         retry_cfg = (
@@ -64,28 +70,33 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
     def build_query(self, criteria: UniProtSearchCriteria) -> str:
         return UniProtQueryBuilder().build(criteria)
 
+    def _do_search(self, criteria: UniProtSearchCriteria, query: str) -> list[str]:
+        url = f"{self._base_url}/uniprotkb/search"
+        params = {
+            "query": query,
+            "format": "tsv",
+            "fields": "accession",
+            "size": min(criteria.max_results, 500),
+        }
+        response = self._safe_get(url, params=params, timeout=self.config.timeout)
+        lines = response.text.strip().split("\n")[1:]
+        ids = [line.strip() for line in lines if line.strip()]
+        logger.info(f"Found {len(ids)} UniProt entries")
+        return ids
+
     def search(self, criteria: UniProtSearchCriteria) -> list[str]:
         logger.info("Searching UniProt database...")
         query = self.build_query(criteria)
         try:
-            url = f"{self._base_url}/uniprotkb/search"
-            params = {
-                "query": query,
-                "format": "tsv",
-                "fields": "accession",
-                "size": min(criteria.max_results, 500),
-            }
-            response = self._safe_get(url, params=params, timeout=self.config.timeout)
-            lines = response.text.strip().split("\n")[1:]
-            ids = [line.strip() for line in lines if line.strip()]
-            logger.info(f"Found {len(ids)} UniProt entries")
-            return ids
+            if self._breaker:
+                return self._breaker.call(self._do_search, criteria, query)
+            return self._do_search(criteria, query)
         except DatabaseSearchError:
             raise
         except Exception as exc:
             raise DatabaseSearchError(f"UniProt search error: {exc}") from exc
 
-    def fetch_metadata(
+    def _do_fetch_metadata(
         self, ids: list[str], criteria: UniProtSearchCriteria | None = None
     ) -> Iterator[SequenceRecord]:
         logger.info(f"Streaming UniProt metadata for {len(ids)} entries...")
@@ -128,7 +139,19 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
                     f"Error fetching UniProt metadata for batch {i // batch_size + 1}: {exc}"
                 )
 
-    def download(
+    def fetch_metadata(
+        self, ids: list[str], criteria: UniProtSearchCriteria | None = None
+    ) -> Iterator[SequenceRecord]:
+        try:
+            if self._breaker:
+                return self._breaker.call(self._do_fetch_metadata, ids, criteria)
+            return self._do_fetch_metadata(ids, criteria)
+        except DatabaseSearchError:
+            raise
+        except Exception as exc:
+            raise DatabaseSearchError(f"UniProt metadata fetch failed: {exc}") from exc
+
+    def _do_download(
         self,
         ids: list[str],
         outdir: Path,
@@ -153,6 +176,21 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
                 time.sleep(self.config.rate_limit)
             except Exception as exc:
                 logger.warning(f"Failed to download {uid}: {exc}")
+
+    def download(
+        self,
+        ids: list[str],
+        outdir: Path,
+        criteria: UniProtSearchCriteria | None = None,
+    ) -> Iterator[SequenceRecord]:
+        try:
+            if self._breaker:
+                return self._breaker.call(self._do_download, ids, outdir, criteria)
+            return self._do_download(ids, outdir, criteria)
+        except DatabaseSearchError:
+            raise
+        except Exception as exc:
+            raise DatabaseSearchError(f"UniProt download failed: {exc}") from exc
 
 
 ProviderRegistry.register("uniprot", UniProtSearcher)
