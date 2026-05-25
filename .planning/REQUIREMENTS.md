@@ -22,8 +22,8 @@
 ### Health Checks & CLI Status
 
 - [x] **STATUS-01**: Build `HealthChecker` that probes NCBI Entrez and UniProt REST API availability
-- [ ] **STATUS-02**: `biocurator status` command — probe all configured providers and report health per-provider
-- [ ] **STATUS-03**: Show circuit breaker state in status output (open/closed/half-open counts)
+- [x] **STATUS-02**: `biocurator status` command — probe all configured providers and report health per-provider
+- [x] **STATUS-03**: Show circuit breaker state in status output (open/closed/half-open counts)
 - [ ] **STATUS-04**: Optionally run health check as pre-flight before job execution (`biocurator run --check`)
 
 ### CLI Jobs & Files
@@ -84,8 +84,8 @@
 | CB-03 | Phase 2 | Complete |
 | CB-04 | Phase 2 | Complete |
 | STATUS-01 | Phase 2 | Complete |
-| STATUS-02 | Phase 2 | Pending |
-| STATUS-03 | Phase 2 | Pending |
+| STATUS-02 | Phase 2 | Complete |
+| STATUS-03 | Phase 2 | Complete |
 | STATUS-04 | Phase 5 | Pending |
 | CLI-01 | Phase 4 | Pending |
 | CLI-02 | Phase 4 | Pending |
