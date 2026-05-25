@@ -58,7 +58,11 @@ Plans:
   3. Manifest includes a snapshot of the job config for provenance tracking
   4. Verification function can re-read completed files from disk, recompute SHA-256 checksums, and compare against manifest entries
   5. Manifest format follows BagIt-compatible conventions (verifiable with standard `sha256sum -c`)
-**Plans**: TBD
+**Plans**: 2 plans in 1 wave
+
+Plans:
+- [ ] 03-01-PLAN.md — StreamingExporter hashing + manifest writing + curator wiring + tests (DI-01, DI-02, DI-03)
+- [ ] 03-02-PLAN.md — manifest_verify() library function + tests + core exports (DI-04)
 
 ### Phase 4: CLI Jobs & Files Commands
 **Goal**: Users can list available jobs from a config and inspect downloaded files with integrity verification
