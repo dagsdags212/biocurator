@@ -4,6 +4,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Generic, TypeVar, Iterator
 
+import pybreaker
+
 from biocurator.config.schema import BreakerConfig, RetryConfig
 
 
@@ -128,6 +130,23 @@ class DatabaseSearcher(ABC, Generic[C]):
     def __init__(self, config: DatabaseConfig, email: str) -> None:
         self.config = config
         self.email = email
+
+    def _init_breaker(self) -> pybreaker.CircuitBreaker | None:
+        if self.config.breaker is None:
+            return None
+        resolved = self.config.breaker.resolve()
+        return pybreaker.CircuitBreaker(
+            fail_max=resolved.fail_max,
+            reset_timeout=resolved.recovery_timeout,
+            exclude=[ValueError, KeyError, TypeError],
+        )
+
+    @property
+    def breaker_state(self) -> str | None:
+        breaker = getattr(self, "_breaker", None)
+        if breaker is None:
+            return None
+        return str(breaker.state)
 
     @abstractmethod
     def build_query(self, criteria: C) -> str:
