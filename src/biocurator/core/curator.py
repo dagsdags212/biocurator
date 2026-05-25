@@ -186,6 +186,17 @@ class Biocurator:
                     if per_db_breaker
                     else base_breaker
                 )
+                searcher._breaker = searcher._init_breaker()
+                per_db_breaker = (
+                    job_config.search.breaker.get(db_name)
+                    if job_config.search and job_config.search.breaker
+                    else None
+                )
+                searcher.config.breaker = (
+                    per_db_breaker.resolve(base_breaker)
+                    if per_db_breaker
+                    else base_breaker
+                )
 
                 search_cfg = job_config.search
                 filter_cfg = job_config.filter

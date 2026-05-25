@@ -138,7 +138,12 @@ class DatabaseSearcher(ABC, Generic[C]):
         return pybreaker.CircuitBreaker(
             fail_max=resolved.fail_max,
             reset_timeout=resolved.recovery_timeout,
-            exclude=[ValueError, KeyError, TypeError],
+            success_threshold=resolved.half_open_max_successes,
+            exclude=[
+                ValueError,
+                KeyError,
+                TypeError,
+            ],
         )
 
     @property
@@ -146,7 +151,7 @@ class DatabaseSearcher(ABC, Generic[C]):
         breaker = getattr(self, "_breaker", None)
         if breaker is None:
             return None
-        return str(breaker.state)
+        return breaker.state.name
 
     @abstractmethod
     def build_query(self, criteria: C) -> str:
