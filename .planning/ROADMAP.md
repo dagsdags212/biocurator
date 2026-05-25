@@ -74,7 +74,19 @@ Plans:
   3. `biocurator files --verify` re-reads files from disk, recomputes checksums, compares against manifest, and reports any corruption clearly
   4. `biocurator files` without a job name shows all jobs that have downloaded files
   5. All command outputs use Rich tables for human-readable display with consistent formatting
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
+
+**Wave 1 (independent — can run in parallel):**
+- [x] 04-01-PLAN.md — `biocurator jobs` command + main.py registration + tests (CLI-01)
+- [x] 04-02-PLAN.md — `biocurator files` list mode + main.py registration + tests (CLI-02)
+
+**Wave 2 *(blocked on Wave 1 completion)*:**
+- [x] 04-03-PLAN.md — `biocurator files --verify` mode + exit codes + tests (CLI-03)
+
+**Cross-cutting constraints:**
+- All commands default to `biocurator_config.yaml` (not `config.yaml`)
+- All table output uses `header_style="bold magenta"` per status.py convention
+- `manifest_verify()` from `biocurator.core` is the only verification backend
 
 ### Phase 5: Pre-flight Check & Integration
 **Goal**: Users can optionally check server health before running a job; all reliability features work together coherently
@@ -97,5 +109,5 @@ Plans:
 | 1. Error Handling & Retry Foundation | 3/3 | Complete | 2026-05-25 |
 | 2. Circuit Breaker & Health Status | 3/3 | Complete   | 2026-05-25 |
 | 3. Checksums & Manifests | 2/2 | Complete   | 2026-05-25 |
-| 4. CLI Jobs & Files Commands | 0/0 | Not started | - |
+| 4. CLI Jobs & Files Commands | 0/3 | Planned | - |
 | 5. Pre-flight Check & Integration | 0/0 | Not started | - |
