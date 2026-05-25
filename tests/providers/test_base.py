@@ -27,6 +27,7 @@ def test_search_criteria_has_no_location():
 
 def test_query_builder_is_abstract():
     import inspect
+
     assert inspect.isabstract(QueryBuilder)
 
 
@@ -43,8 +44,14 @@ def test_search_criteria_exclude_terms_defaults_to_empty_list():
 
 def test_search_criteria_optional_fields_are_none_by_default():
     c = SearchCriteria()
-    for field in ("organism", "min_length", "max_length",
-                  "start_date", "end_date", "quality_threshold"):
+    for field in (
+        "organism",
+        "min_length",
+        "max_length",
+        "start_date",
+        "end_date",
+        "quality_threshold",
+    ):
         assert getattr(c, field) is None
 
 
@@ -108,14 +115,36 @@ def test_database_searcher_concrete_subclass_sets_config_and_email():
     class _Concrete(DatabaseSearcher):
         def build_query(self, criteria: SearchCriteria) -> str:
             return ""
+
         def search(self, criteria: SearchCriteria) -> list[str]:
             return []
-        def fetch_metadata(self, ids: list[str], criteria: SearchCriteria | None = None) -> list[SequenceRecord]:
+
+        def fetch_metadata(
+            self, ids: list[str], criteria: SearchCriteria | None = None
+        ) -> list[SequenceRecord]:
             return []
-        def download(self, ids: list[str], outdir: Path, criteria: SearchCriteria | None = None) -> list[SequenceRecord]:
+
+        def download(
+            self, ids: list[str], outdir: Path, criteria: SearchCriteria | None = None
+        ) -> list[SequenceRecord]:
             return []
 
     s = _Concrete(DatabaseConfig(name="x"), "user@example.com")
     assert s.email == "user@example.com"
     assert s.config.name == "x"
     assert not hasattr(s, "session")
+
+
+def test_breaker_state_returns_state_name_not_object_repr():
+    """CB-04: breaker_state returns 'closed'/'open'/'half_open', not Python repr."""
+    from biocurator.config.schema import BreakerConfig
+    from biocurator.providers.base import DatabaseConfig
+    from biocurator.providers.ncbi.searcher import NCBISearcher
+
+    cfg = DatabaseConfig(name="test", breaker=BreakerConfig(fail_max=3))
+    searcher = NCBISearcher(cfg, "test@example.com")
+    # _breaker is set in __init__ via _init_breaker()
+    assert hasattr(searcher, "_breaker")
+    # breaker_state property should return a pybreaker state name string
+    state = searcher.breaker_state
+    assert state in ("closed", "open", "half_open"), f"Got: {state!r}"
