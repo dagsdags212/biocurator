@@ -12,7 +12,7 @@ Take a working-but-fragile bioinformatics CLI tool (silent error swallowing, cus
 - [x] **Phase 4: CLI Jobs & Files Commands** - `biocurator jobs`, `biocurator files`, and `files --verify` for data integrity verification (completed 2026-05-26)
 - [x] **Phase 5: Pre-flight Check & Integration** - `biocurator run --check`, config pre-flight toggle, end-to-end reliability integration (planned 2026-05-26)
 - [ ] **Phase 6: Retrospective Verification (Phase 01 & 04)** - Create VERIFICATION.md for Phases 01 and 04 (gap closure)
-- [ ] **Phase 7: Circuit Breaker Critical Fixes** - Fix breaker_state repr, global_breaker wiring, STATUS-03 display (gap closure)
+- [x] **Phase 7: Circuit Breaker Critical Fixes** - Fix breaker_state repr, global_breaker wiring, STATUS-03 display (gap closure) (completed 2026-05-25)
 - [ ] **Phase 8: Circuit Breaker Tech Debt Cleanup** - Fix success_threshold, merge+recreate breaker, test coverage, preview curator (gap closure)
 - [ ] **Phase 9: Checksums Code Review Fixes** - Fix CR-01 through CR-05 from Phase 03 review (gap closure)
 - [ ] **Phase 10: Cleanup & Polish** - Delete orphaned utils/network.py, complete Phase 05 human UAT (gap closure)
@@ -135,7 +135,7 @@ Plans:
 **Plans**: 1 plan in 1 wave
 
 Plans:
-- [ ] 07-01-PLAN.md — Fix BREAK-01 (global_breaker wiring), dedup curator merge code, verify CB-04/STATUS-03 chain + regression test
+- [x] 07-01-PLAN.md — Fix BREAK-01 (global_breaker wiring), dedup curator merge code, verify CB-04/STATUS-03 chain + regression test
 
 ### Phase 8: Circuit Breaker Tech Debt Cleanup
 **Goal**: Fix remaining Phase 02 bugs (success_threshold, merge recreates breaker) and add test coverage; wire retry/breaker into preview curator
@@ -181,7 +181,7 @@ Plans:
 | 4. CLI Jobs & Files Commands | 3/3 | Complete | 2026-05-26 |
 | 5. Pre-flight Check & Integration | 2/2 | Complete   | 2026-05-25 |
 | 6. Retrospective Verification | 0/0 | Planned | — |
-| 7. Circuit Breaker Critical Fixes | 0/1 | Planned | — |
+| 7. Circuit Breaker Critical Fixes | 1/1 | Complete   | 2026-05-25 |
 | 8. Circuit Breaker Tech Debt Cleanup | 0/0 | Planned | — |
 | 9. Checksums Code Review Fixes | 0/0 | Planned | — |
 | 10. Cleanup & Polish | 0/0 | Planned | — |
