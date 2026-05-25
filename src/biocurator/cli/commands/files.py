@@ -11,6 +11,7 @@ from rich.table import Table
 
 from biocurator.cli.main import console
 from biocurator.config.loader import ConfigLoader
+from biocurator.core import manifest_verify
 from biocurator.exceptions import ConfigNotFoundError, InvalidConfigError
 
 
@@ -167,5 +168,94 @@ def _handle_all_jobs_summary(global_config) -> None:
 
 
 def _handle_verify(job_name: Optional[str], global_config, config: str) -> None:
-    """Placeholder — verify logic added in plan 04-03."""
-    console.print("[yellow]--verify not yet implemented in this plan[/yellow]")
+    """Re-read files from disk, verify SHA-256 checksums, report per-file status."""
+    if job_name is not None:
+        # Single-job verify
+        job = _find_job(job_name, global_config)
+        if job is None:
+            available = ", ".join(j.name for j in global_config.jobs)
+            console.print(
+                f"[bold red]Unknown job:[/bold red] {job_name}. Available: {available}"
+            )
+            raise typer.Exit(1)
+        failed = _verify_one_job(job_name, Path(job.export.outdir))
+        if failed:
+            raise typer.Exit(1)
+    else:
+        # All-jobs verify
+        jobs_with_manifests = [
+            j
+            for j in global_config.jobs
+            if (Path(j.export.outdir) / "manifest.json").exists()
+        ]
+        if not jobs_with_manifests:
+            console.print(
+                "[yellow]No manifests found — run jobs first.[/yellow]"
+            )
+            return
+
+        any_failure = False
+        for job in jobs_with_manifests:
+            failed = _verify_one_job(job.name, Path(job.export.outdir))
+            if failed:
+                any_failure = True
+
+        if any_failure:
+            raise typer.Exit(1)
+
+
+def _verify_one_job(job_name: str, outdir: Path) -> bool:
+    """Run manifest_verify for one job and render results. Returns True if any failure."""
+    manifest_path = outdir / "manifest.json"
+    if not manifest_path.exists():
+        console.print(
+            f"[yellow]No manifest for '{job_name}' — run the job first.[/yellow]"
+        )
+        return False
+
+    result = manifest_verify(manifest_path)
+
+    if not result["manifest_valid"]:
+        console.print(
+            f"[bold red]Cannot parse manifest:[/bold red] {manifest_path}"
+        )
+        raise typer.Exit(1)
+
+    table = Table(
+        title=f"Verification — {job_name}",
+        show_header=True,
+        header_style="bold magenta",
+    )
+    table.add_column("Filename", style="cyan")
+    table.add_column("Status")
+    table.add_column("SHA-256 Match")
+    table.add_column("Notes")
+
+    for entry in result["results"]:
+        status = entry["status"]
+        if status == "ok":
+            status_display = "[bold green]✓ ok[/bold green]"
+            match_display = "[bold green]✓[/bold green]"
+            notes = ""
+        elif status == "corrupted":
+            status_display = "[bold red]✗ corrupted[/bold red]"
+            match_display = "[bold red]✗[/bold red]"
+            notes = f"expected: {entry['sha256_expected'][:12]}..."
+        else:  # missing
+            status_display = "[bold yellow]? missing[/bold yellow]"
+            match_display = "[dim]N/A[/dim]"
+            notes = "File not found on disk"
+
+        table.add_row(entry["path"], status_display, match_display, notes)
+
+    console.print(table)
+
+    if result["all_ok"]:
+        console.print("[bold green]All checksums verified ✓[/bold green]")
+        return False
+    else:
+        console.print(
+            f"[bold red]Issues found: {result['files_corrupted']} corrupted, "
+            f"{result['files_missing']} missing[/bold red]"
+        )
+        return True
