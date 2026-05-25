@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-05-25)
 ## Current Position
 
 Phase: 1 of 5 (Error Handling & Retry Foundation)
-Plan: 0 of 0 in current phase
-Status: Ready to plan
-Last activity: 2026-05-25 — Roadmap created
+Plan: 3 of 3 in current phase
+Status: Planned (ready to execute)
+Last activity: 2026-05-25 — Phase 1 planning completed
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -43,6 +43,11 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
 - (Roadmap): 5 phases derived from 22 requirements — foundation first, then circuit breaker/health, checksums, CLI commands, integration polish
+- (Phase 1 discuss): Global retry defaults (top-level YAML) + per-database overrides in job search config
+- (Phase 1 discuss): Collect & report for generator batch errors; raise typed exceptions in search()
+- (Phase 1 discuss): Retry only network errors (ConnectionError, Timeout, 5xx); never data/parse errors
+- (Phase 1 discuss): Full replacement of custom @retry with tenacity at all 3 call sites
+- (Phase 1 discuss): User-friendly config names (max_attempts, backoff_factor, max_delay)
 
 ### Pending Todos
 
