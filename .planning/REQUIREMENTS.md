@@ -24,7 +24,7 @@
 - [x] **STATUS-01**: Build `HealthChecker` that probes NCBI Entrez and UniProt REST API availability
 - [x] **STATUS-02**: `biocurator status` command — probe all configured providers and report health per-provider
 - [x] **STATUS-03**: Show circuit breaker state in status output (open/closed/half-open counts)
-- [ ] **STATUS-04**: Optionally run health check as pre-flight before job execution (`biocurator run --check`)
+- [x] **STATUS-04**: Optionally run health check as pre-flight before job execution (`biocurator run --check`)
 
 ### CLI Jobs & Files
 
@@ -43,7 +43,7 @@
 
 - [ ] **CFG-01**: Add retry, circuit breaker, and timeout fields to `DatabaseConfig` schema — all optional with sensible defaults
 - [X] **CFG-02**: Ensure backward compatibility — existing YAML configs without new fields must parse without error
-- [ ] **CFG-03**: Add pre-flight check toggle to job config (`search.preflight_check: true/false`)
+- [x] **CFG-03**: Add pre-flight check toggle to job config (`search.preflight_check: true/false`)
 
 ## v2 Requirements
 
@@ -86,7 +86,7 @@
 | STATUS-01 | Phase 2 | Complete |
 | STATUS-02 | Phase 2 | Complete |
 | STATUS-03 | Phase 2 | Complete |
-| STATUS-04 | Phase 5 | Pending |
+| STATUS-04 | Phase 5 | Complete |
 | CLI-01 | Phase 4 | Pending |
 | CLI-02 | Phase 4 | Pending |
 | CLI-03 | Phase 4 | Pending |
@@ -96,7 +96,7 @@
 | DI-04 | Phase 3 | Pending |
 | CFG-01 | Phase 1 | Pending |
 | CFG-02 | Phase 2 | Complete |
-| CFG-03 | Phase 5 | Pending |
+| CFG-03 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 22 total
