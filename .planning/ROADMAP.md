@@ -41,7 +41,12 @@ Plans:
   3. Circuit breaker state (open/closed/half-open) is visible in `biocurator status` output
   4. After circuit opens, a recovery probe is automatically attempted after the configured recovery timeout (half-open state)
   5. Circuit breaker configuration (failure threshold, recovery timeout, half-open max retries) is in `DatabaseConfig` with sensible defaults
-**Plans**: TBD
+**Plans**: 3 plans in 3 waves
+
+Plans:
+- [ ] 02-01-PLAN.md — BreakerConfig Foundation (config schema, pybreaker, loader parsing)
+- [ ] 02-02-PLAN.md — Circuit Breaker + HealthChecker Integration (searcher wrapping, HealthChecker, curator wiring)
+- [ ] 02-03-PLAN.md — biocurator status CLI Command (Rich table, health probes, breaker state display)
 
 ### Phase 3: Checksums & Manifests
 **Goal**: Every downloaded sequence file has a SHA-256 checksum; per-job manifest files track checksums, record counts, and provenance metadata
