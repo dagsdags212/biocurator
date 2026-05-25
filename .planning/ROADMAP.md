@@ -11,6 +11,11 @@ Take a working-but-fragile bioinformatics CLI tool (silent error swallowing, cus
 - [x] **Phase 3: Checksums & Manifests** - SHA-256 checksums during streaming export, per-job manifest files with provenance metadata (completed 2026-05-25)
 - [x] **Phase 4: CLI Jobs & Files Commands** - `biocurator jobs`, `biocurator files`, and `files --verify` for data integrity verification (completed 2026-05-26)
 - [x] **Phase 5: Pre-flight Check & Integration** - `biocurator run --check`, config pre-flight toggle, end-to-end reliability integration (planned 2026-05-26)
+- [ ] **Phase 6: Retrospective Verification (Phase 01 & 04)** - Create VERIFICATION.md for Phases 01 and 04 (gap closure)
+- [ ] **Phase 7: Circuit Breaker Critical Fixes** - Fix breaker_state repr, global_breaker wiring, STATUS-03 display (gap closure)
+- [ ] **Phase 8: Circuit Breaker Tech Debt Cleanup** - Fix success_threshold, merge+recreate breaker, test coverage, preview curator (gap closure)
+- [ ] **Phase 9: Checksums Code Review Fixes** - Fix CR-01 through CR-05 from Phase 03 review (gap closure)
+- [ ] **Phase 10: Cleanup & Polish** - Delete orphaned utils/network.py, complete Phase 05 human UAT (gap closure)
 
 ## Phase Details
 
@@ -104,9 +109,60 @@ Plans:
 - [x] 05-01-PLAN.md — Config schema + parser for preflight_check (SearchConfig field, ConfigLoader parsing, tests)
 - [x] 05-02-PLAN.md — Pre-flight health check in run command (--check/--no-check flags, health probes, Rich table, interactive prompt, tests)
 
+### Phase 6: Retrospective Verification (Phase 01 & 04)
+**Goal**: Create formal VERIFICATION.md documents for Phase 01 (Error Handling & Retry) and Phase 04 (CLI Jobs & Files) to confirm all built code satisfies original requirements
+**Depends on**: Phase 1, Phase 4 (code already built)
+**Requirements**: ERR-01, ERR-02, ERR-03, ERR-04, CFG-01, CLI-01, CLI-02, CLI-03
+**Gap Closure**: Closes 8 unsatisfied requirements from audit (missing VERIFICATION.md)
+**Success Criteria** (what must be TRUE):
+  1. 01-VERIFICATION.md exists and confirms ERR-01..04 and CFG-01 are satisfied with code evidence
+  2. 04-VERIFICATION.md exists and confirms CLI-01..03 are satisfied with code evidence
+
+### Phase 7: Circuit Breaker Critical Fixes
+**Goal**: Fix three blocking bugs found by the milestone audit — breaker_state returns object repr, main curator loses global_breaker, and status display is broken
+**Depends on**: Phase 2 (code already built)
+**Requirements**: CB-04, STATUS-03
+**Gap Closure**: Closes 2 unsatisfied requirements + 1 HIGH-severity integration gap (BREAK-01)
+**Success Criteria** (what must be TRUE):
+  1. `breaker_state` property returns human-readable strings (`'closed'`/`'open'`/`'half_open'`) instead of Python object repr
+  2. `run.py` main curator path passes `global_breaker=global_config.breaker` so circuit breakers are active when `--check` is not used
+  3. `biocurator status` displays breaker state correctly using color-coded state names
+
+### Phase 8: Circuit Breaker Tech Debt Cleanup
+**Goal**: Fix remaining Phase 02 bugs (success_threshold, merge recreates breaker) and add test coverage; wire retry/breaker into preview curator
+**Depends on**: Phase 7 (breaker fixes)
+**Requirements**: CB-01, CB-03 (partial — fix gaps)
+**Gap Closure**: Closes 3 Phase 02 tech debt items + 1 LOW-severity integration gap (BREAK-02)
+**Success Criteria** (what must be TRUE):
+  1. `success_threshold` parameter reaches pybreaker so half-open max successes is configurable
+  2. `run_job()` merge properly recreates `_breaker` instances when config changes (per-db breakers work)
+  3. Breaker-related code has test coverage (BreakerConfig, `_init_breaker()`, `breaker_state`, `HealthChecker`, `status_command`)
+  4. Preview curator receives retry and breaker config so preview benefits from configured reliability
+
+### Phase 9: Checksums Code Review Fixes
+**Goal**: Fix 5 code review findings from Phase 03 checksums/manifests implementation
+**Depends on**: Phase 3 (code already built)
+**Requirements**: DI-01, DI-02, DI-03, DI-04 (hardening)
+**Gap Closure**: Closes 5 code review findings (CR-01 through CR-05)
+**Success Criteria** (what must be TRUE):
+  1. `_hash_state` is reset in `StreamingExporter.open()` so reused exporter gets correct checksums (CR-01)
+  2. `__exit__` does not write manifest after exceptions — truncated files aren't recorded (CR-02)
+  3. `manifest_verify()` catches `json.JSONDecodeError` with a clear error message (CR-03)
+  4. `verify_file` uses streaming/chunked reads instead of `read_bytes()` to avoid OOM on large files (CR-04)
+  5. Incremental hasher and file verifier use consistent encoding (CR-05)
+
+### Phase 10: Cleanup & Polish
+**Goal**: Remove orphaned code and complete outstanding human UAT
+**Depends on**: Phase 5 (pre-flight check code built)
+**Requirements**: None (tech debt cleanup)
+**Gap Closure**: Closes 2 optional technical debt items
+**Success Criteria** (what must be TRUE):
+  1. `utils/network.py` orphaned stub is deleted (13 lines, no imports, safe to remove)
+  2. Phase 05 human UAT document is reviewed and completed (live API smoke test)
+
 ## Progress
 
-**Execution Order:** Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+**Execution Order:** Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -115,3 +171,8 @@ Plans:
 | 3. Checksums & Manifests | 2/2 | Complete   | 2026-05-25 |
 | 4. CLI Jobs & Files Commands | 3/3 | Complete | 2026-05-26 |
 | 5. Pre-flight Check & Integration | 2/2 | Complete   | 2026-05-25 |
+| 6. Retrospective Verification | 0/0 | Planned | — |
+| 7. Circuit Breaker Critical Fixes | 0/0 | Planned | — |
+| 8. Circuit Breaker Tech Debt Cleanup | 0/0 | Planned | — |
+| 9. Checksums Code Review Fixes | 0/0 | Planned | — |
+| 10. Cleanup & Polish | 0/0 | Planned | — |
