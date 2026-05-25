@@ -132,6 +132,10 @@ Plans:
   1. `breaker_state` property returns human-readable strings (`'closed'`/`'open'`/`'half_open'`) instead of Python object repr
   2. `run.py` main curator path passes `global_breaker=global_config.breaker` so circuit breakers are active when `--check` is not used
   3. `biocurator status` displays breaker state correctly using color-coded state names
+**Plans**: 1 plan in 1 wave
+
+Plans:
+- [ ] 07-01-PLAN.md — Fix BREAK-01 (global_breaker wiring), dedup curator merge code, verify CB-04/STATUS-03 chain + regression test
 
 ### Phase 8: Circuit Breaker Tech Debt Cleanup
 **Goal**: Fix remaining Phase 02 bugs (success_threshold, merge recreates breaker) and add test coverage; wire retry/breaker into preview curator
@@ -177,7 +181,7 @@ Plans:
 | 4. CLI Jobs & Files Commands | 3/3 | Complete | 2026-05-26 |
 | 5. Pre-flight Check & Integration | 2/2 | Complete   | 2026-05-25 |
 | 6. Retrospective Verification | 0/0 | Planned | — |
-| 7. Circuit Breaker Critical Fixes | 0/0 | Planned | — |
+| 7. Circuit Breaker Critical Fixes | 0/1 | Planned | — |
 | 8. Circuit Breaker Tech Debt Cleanup | 0/0 | Planned | — |
 | 9. Checksums Code Review Fixes | 0/0 | Planned | — |
 | 10. Cleanup & Polish | 0/0 | Planned | — |
