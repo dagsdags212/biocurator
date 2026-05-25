@@ -8,7 +8,7 @@ Take a working-but-fragile bioinformatics CLI tool (silent error swallowing, cus
 
 - [ ] **Phase 1: Error Handling & Retry Foundation** - Fix silent error swallowing, migrate to tenacity retry, add per-provider retry config to schema
 - [x] **Phase 2: Circuit Breaker & Health Status** - Per-provider circuit breakers, `biocurator status` command with health probes and breaker state (completed 2026-05-25)
-- [ ] **Phase 3: Checksums & Manifests** - SHA-256 checksums during streaming export, per-job manifest files with provenance metadata
+- [x] **Phase 3: Checksums & Manifests** - SHA-256 checksums during streaming export, per-job manifest files with provenance metadata (completed 2026-05-25)
 - [ ] **Phase 4: CLI Jobs & Files Commands** - `biocurator jobs`, `biocurator files`, and `files --verify` for data integrity verification
 - [ ] **Phase 5: Pre-flight Check & Integration** - `biocurator run --check`, config pre-flight toggle, end-to-end reliability integration
 
@@ -61,8 +61,8 @@ Plans:
 **Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 03-01-PLAN.md — StreamingExporter hashing + manifest writing + curator wiring + tests (DI-01, DI-02, DI-03)
-- [ ] 03-02-PLAN.md — manifest_verify() library function + tests + core exports (DI-04)
+- [x] 03-01-PLAN.md — StreamingExporter hashing + manifest writing + curator wiring + tests (DI-01, DI-02, DI-03)
+- [x] 03-02-PLAN.md — manifest_verify() library function + tests + core exports (DI-04)
 
 ### Phase 4: CLI Jobs & Files Commands
 **Goal**: Users can list available jobs from a config and inspect downloaded files with integrity verification
@@ -96,6 +96,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Error Handling & Retry Foundation | 3/3 | Complete | 2026-05-25 |
 | 2. Circuit Breaker & Health Status | 3/3 | Complete   | 2026-05-25 |
-| 3. Checksums & Manifests | 0/0 | Not started | - |
+| 3. Checksums & Manifests | 2/2 | Complete   | 2026-05-25 |
 | 4. CLI Jobs & Files Commands | 0/0 | Not started | - |
 | 5. Pre-flight Check & Integration | 0/0 | Not started | - |
