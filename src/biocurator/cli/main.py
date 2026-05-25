@@ -22,6 +22,7 @@ logger = get_logger(__name__)
 from biocurator.cli.commands.init import init_command
 from biocurator.cli.commands.run import run_command
 from biocurator.cli.commands.preview import preview_command
+from biocurator.cli.commands.status import status_command
 
 
 def _version_callback(value: bool) -> None:
@@ -30,6 +31,7 @@ def _version_callback(value: bool) -> None:
 
         rprint(f"Biocurator [bold green]{__version__}[/bold green]")
         raise typer.Exit()
+
 
 app = typer.Typer(
     name="biocurator",
@@ -42,6 +44,7 @@ app = typer.Typer(
 app.command("init")(init_command)
 app.command("run")(run_command)
 app.command("preview")(preview_command)
+app.command("status")(status_command)
 
 
 # Utility functions for rich output
