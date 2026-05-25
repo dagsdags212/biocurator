@@ -107,12 +107,16 @@ def manifest_verify(manifest_path: Path) -> dict[str, Any]:
             "status": status,
         })
 
+    files_checked = len(results)
+    # WR-03: convenience boolean so callers don't have to compare multiple counters.
+    all_ok = files_checked > 0 and files_matched == files_checked
     return {
         "manifest_path": str(manifest_path),
         "manifest_valid": manifest_valid,
-        "files_checked": len(results),
+        "files_checked": files_checked,
         "files_matched": files_matched,
         "files_missing": files_missing,
         "files_corrupted": files_corrupted,
+        "all_ok": all_ok,
         "results": results,
     }

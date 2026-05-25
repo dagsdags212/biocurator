@@ -75,27 +75,43 @@ class StreamingExporter:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        # CR-02: only write manifest on clean exit; on exception the output
+        # files may be truncated, so manifesting them would certify corrupt data.
+        if exc_type is not None:
+            for handle in self.file_handles.values():
+                handle.close()
+            self.file_handles.clear()
+            logger.warning("Export aborted due to exception; manifest not written.")
+        else:
+            self.close()
 
     def open(self) -> None:
         """Open file handles for requested formats."""
+        # CR-01: reset per-run state so a re-used instance starts clean.
+        self._hashers = {}
+        self._record_counts = {}
+        self._checksums = {}
+        self._is_first_csv_row = True
+        self._json_count = 0
+
         if "fasta" in self.formats:
             path = self.outdir / f"{self.prefix}_sequences.fasta"
-            self.file_handles["fasta"] = open(path, "w")
+            # CR-05: explicit encoding so incremental hash (utf-8) matches on-disk bytes.
+            self.file_handles["fasta"] = open(path, "w", encoding="utf-8", newline="\n")
             self.output_paths["fasta"] = path
             self._hashers["fasta"] = hashlib.sha256()
             self._record_counts["fasta"] = 0
 
         if "csv" in self.formats:
             path = self.outdir / f"{self.prefix}_metadata.csv"
-            self.file_handles["csv"] = open(path, "w")
+            self.file_handles["csv"] = open(path, "w", encoding="utf-8", newline="\n")
             self.output_paths["csv"] = path
             self._hashers["csv"] = hashlib.sha256()
             self._record_counts["csv"] = 0
 
         if "json" in self.formats:
             path = self.outdir / f"{self.prefix}_metadata.json"
-            self.file_handles["json"] = open(path, "w")
+            self.file_handles["json"] = open(path, "w", encoding="utf-8", newline="\n")
             self.output_paths["json"] = path
             self._hashers["json"] = hashlib.sha256()
             self._record_counts["json"] = 0
