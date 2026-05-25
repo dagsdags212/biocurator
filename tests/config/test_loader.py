@@ -76,3 +76,38 @@ def test_empty_job_section_gets_defaults(tmp_path):
     assert job.filter.min_length is None
     assert job.export.formats == ["fasta"]
     assert job.export.prefix == "biocurator"
+
+
+def test_preflight_check_parsed_from_yaml(tmp_path):
+    """YAML search.preflight_check: true -> SearchConfig.preflight_check == True."""
+    cfg_file = tmp_path / "config.yaml"
+    cfg_file.write_text(
+        "email: user@example.com\n"
+        "jobs:\n"
+        "  pf-job:\n"
+        "    search:\n"
+        "      databases: [ncbi]\n"
+        "      preflight_check: true\n"
+        "    filter: {}\n"
+        "    export: {}\n"
+    )
+    cfg = ConfigLoader.load(cfg_file)
+    job = cfg.jobs[0]
+    assert job.search.preflight_check == True
+
+
+def test_preflight_check_defaults_false_when_missing(tmp_path):
+    """YAML without preflight_check -> SearchConfig.preflight_check defaults to False."""
+    cfg_file = tmp_path / "config.yaml"
+    cfg_file.write_text(
+        "email: user@example.com\n"
+        "jobs:\n"
+        "  no-pf-job:\n"
+        "    search:\n"
+        "      databases: [ncbi]\n"
+        "    filter: {}\n"
+        "    export: {}\n"
+    )
+    cfg = ConfigLoader.load(cfg_file)
+    job = cfg.jobs[0]
+    assert job.search.preflight_check == False

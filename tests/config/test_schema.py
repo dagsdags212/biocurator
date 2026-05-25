@@ -66,3 +66,18 @@ def test_global_config_holds_jobs():
     assert cfg.email == "test@example.com"
     assert len(cfg.jobs) == 1
     assert cfg.jobs[0].name == "job1"
+
+
+def test_search_config_preflight_check_defaults_false():
+    """Existing behavior: preflight_check defaults to False for backward compat."""
+    cfg = SearchConfig(databases=["ncbi"])
+    assert cfg.preflight_check == False
+    assert cfg.preflight_check is not None  # not None, plain bool
+
+
+def test_search_config_preflight_check_explicit():
+    """Explicit preflight_check: True is stored correctly."""
+    cfg = SearchConfig(databases=["ncbi"], preflight_check=True)
+    assert cfg.preflight_check == True
+    cfg2 = SearchConfig(databases=["ncbi"], preflight_check=False)
+    assert cfg2.preflight_check == False
