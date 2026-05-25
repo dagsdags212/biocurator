@@ -24,7 +24,12 @@ Take a working-but-fragile bioinformatics CLI tool (silent error swallowing, cus
   3. Existing YAML configs without the new retry/breaker/timeout fields parse without error (backward compatible)
   4. Retry uses tenacity; log messages show retry attempt numbers with backoff timing
   5. Typed exceptions distinguish network errors (transient, retryable) from data/parse errors (permanent, not retryable)
-**Plans**: TBD
+**Plans**: 3 plans in 2 waves
+
+Plans:
+- [ ] 01-01-PLAN.md — Config Foundation + Utility Setup (RetryConfig, schema, loader, retryable_exceptions, network.py gut)
+- [ ] 01-02-PLAN.md — NCBI Searcher Migration + Retry Merge (tenacity, narrow exceptions, DatabaseSearchError, merge logic)
+- [ ] 01-03-PLAN.md — UniProt Searcher Migration + Tests (tenacity, narrow exceptions, RetryConfig tests)
 
 ### Phase 2: Circuit Breaker & Health Status
 **Goal**: Circuit breakers prevent cascading failures when a server is down; users can probe provider health via CLI and see breaker state
@@ -80,7 +85,7 @@ Take a working-but-fragile bioinformatics CLI tool (silent error swallowing, cus
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Error Handling & Retry Foundation | 0/0 | Not started | - |
+| 1. Error Handling & Retry Foundation | 0/3 | Planned | - |
 | 2. Circuit Breaker & Health Status | 0/0 | Not started | - |
 | 3. Checksums & Manifests | 0/0 | Not started | - |
 | 4. CLI Jobs & Files Commands | 0/0 | Not started | - |
