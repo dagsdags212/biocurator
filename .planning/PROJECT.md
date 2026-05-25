@@ -1,0 +1,101 @@
+# Biocurator
+
+## What This Is
+
+A config-driven command-line tool for curating biological sequence datasets from NCBI and UniProt. Users define curation jobs in YAML (search criteria, filters, export formats) and run them via CLI to reliably download and verify FASTA, CSV, or JSON data.
+
+## Core Value
+
+Reliably download verified biological sequence data from public databases with a single CLI command, even across intermittent network failures.
+
+## Requirements
+
+### Validated
+
+- ✓ Config-driven pipeline: YAML defines multi-job workflows with search, filter, export phases — existing
+- ✓ NCBI Entrez provider: search (`esearch` with history), metadata fetch (`esummary`), sequence download (`efetch`) — existing
+- ✓ UniProt REST API provider: search (`/uniprotkb/search`), metadata fetch, FASTA download — existing
+- ✓ Streaming export: FASTA, CSV, JSON formats via `StreamingExporter` with memory-efficient iterators — existing
+- ✓ CLI with Typer + Rich: `init`, `run`, `preview` commands with progress bars and tables — existing
+- ✓ Config validation at load time: typed dataclass schema with required field checks — existing
+- ✓ Exponential backoff retry: decorator-based `@retry` on all network calls — existing
+- ✓ Sequence filtering: length, organism, exclude terms, quality threshold — existing
+- ✓ Typed exception hierarchy: `BiocuratorError` with 7 subtypes — existing
+- ✓ Rate limiting: configurable per-provider delay between requests — existing
+- ✓ Provider registry: plugin-style `ProviderRegistry` for discovering searchers — existing
+- ✓ CI via GitHub Actions: tests on push/PR, publish on release — existing
+
+### Active
+
+#### Reliability
+
+- [ ] **RELIAB-01**: Fix silent error swallowing in `NCBISearcher` and `UniProtSearcher` — exceptions should propagate or be surfaced clearly, not return empty results
+- [ ] **RELIAB-02**: Add granular, configurable retry settings per provider (max attempts, backoff factor, timeout) in `DatabaseConfig`
+- [ ] **RELIAB-03**: Add circuit breaker pattern to prevent cascading failures when a server is down
+- [ ] **RELIAB-04**: Add server health check endpoint reachable via CLI command and optionally before job execution
+
+#### CLI Commands
+
+- [ ] **CLI-01**: `biocurator status` — probe NCBI/UniProt API availability and report status
+- [ ] **CLI-02**: `biocurator jobs [config.yaml]` — list available jobs from a config file with descriptions
+- [ ] **CLI-03**: `biocurator files [job_name]` — list downloaded files with per-job manifest metadata
+
+#### Data Integrity
+
+- [ ] **TEST-01**: Generate checksums (SHA-256) for all downloaded sequence files during export
+- [ ] **TEST-02**: Store checksums in per-job manifest files alongside download metadata
+- [ ] **TEST-03**: `biocurator files --verify` — verify stored checksums to detect data corruption
+
+### Out of Scope
+
+- GUI or web interface — CLI-only tool
+- Adding new database providers beyond NCBI and UniProt
+- Automated CI integration tests hitting real external APIs (test with fixtures/mocks only)
+- Containerization (Docker) — local CLI tool only
+- Multi-user or server deployment — single-user workstation tool
+
+## Context
+
+Existing codebase at v0.2.0 with ~5,000 files. Key architectural traits:
+
+- **Layered architecture**: CLI → Config → Core → Providers → Utils
+- **Streaming pipeline**: generators (`Iterator[SequenceRecord]`) for memory-efficient dataset processing
+- **Provider abstraction**: `DatabaseSearcher[C]` ABC with `NCBISearcher` and `UniProtSearcher` implementations
+- **Known concerns**: Silent error swallowing in searchers (HIGH), duplicate logic between `run_job` and `preview_command` (MEDIUM), lazy `_json_count` init pattern (MEDIUM), limited test coverage (127 tests across 10 files)
+- **Current CLI commands**: `init`, `run CONFIG`, `preview JOB_NAME`
+
+## Constraints
+
+- **Python**: Must support Python 3.13+ (enforced in pyproject.toml)
+- **API compliance**: Must respect NCBI Entrez usage guidelines (rate limits, email identification)
+- **Backwards compatibility**: Existing YAML config format must remain valid
+- **No external services**: All functionality must work offline except the database API calls themselves
+
+## Key Decisions
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Checksum on download + verify on re-run | Catches both download corruption and storage bit-rot | — Pending |
+| Per-job manifest files | Associates checksums with specific curation runs for traceability | — Pending |
+| Circuit breaker over infinite retry | Prevents hammering a downed server and gives fast feedback | — Pending |
+| Server status as CLI command + pre-flight check | Lets users probe before running and optionally auto-check | — Pending |
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
+---
+*Last updated: 2026-05-25 after initialization*
