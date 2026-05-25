@@ -30,6 +30,8 @@ Reliably download verified biological sequence data from public databases with a
 - ✓ BreakerConfig: fail_max, recovery_timeout, half_open_max_successes in DatabaseConfig — Phase 2
 - ✓ HealthChecker: NCBI Entrez and UniProt REST API availability probes — Phase 2
 - ✓ `biocurator status` CLI: Rich table with Provider, Status, Response Time, Breaker State — Phase 2
+- ✓ Pre-flight check config toggle: `search.preflight_check: true/false` in YAML (CFG-03) — Phase 5
+- ✓ Pre-flight health check CLI: `biocurator run --check`/`--no-check` probes providers before job execution (STATUS-04) — Phase 5
 
 ### Active
 
@@ -104,4 +106,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-26 after Phase 3 execution*
+*Last updated: 2026-05-26 after Phase 5 execution*
