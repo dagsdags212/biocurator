@@ -66,6 +66,7 @@ class ConfigLoader:
             exclude_terms=search_data.get("exclude_terms", []),
             location=search_data.get("location"),
             taxonomy_filter=search_data.get("taxonomy_filter"),
+            preflight_check=search_data.get("preflight_check", False),
         )
 
         raw_job_retry = search_data.get("retry")
