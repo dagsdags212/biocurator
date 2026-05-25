@@ -40,8 +40,20 @@ def run_command(
             "--verbose", "-v", help="Print timestamped log messages to stdout"
         ),
     ] = False,
+    check: Annotated[
+        Optional[bool],
+        typer.Option(
+            "--check/--no-check",
+            help="Run pre-flight health check before executing jobs. "
+            "Overrides the per-job search.preflight_check config setting.",
+        ),
+    ] = None,
 ):
-    """Run curation jobs defined in a YAML config file."""
+    """Run curation jobs defined in a YAML config file.
+
+    Use --check to probe provider health before executing jobs.
+    Use --no-check to skip pre-flight checks even if configured in the config file.
+    """
     if verbose:
         enable_verbose_logging(console=console)
 
