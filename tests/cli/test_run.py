@@ -177,6 +177,50 @@ def test_run_check_with_provider_down_user_proceeds(tmp_path):
     assert mock_instance.run_job.call_count == 1
 
 
+def test_run_main_curator_receives_global_breaker(tmp_path):
+    """BREAK-01: main curator (non-check path) receives global_breaker from config."""
+    config_with_breaker = """\
+email: test@example.com
+breaker:
+  fail_max: 3
+  recovery_timeout: 30
+
+jobs:
+  test-job:
+    search:
+      databases: [ncbi]
+      organism: "E. coli"
+      max_results: 5
+    filter: {{}}
+    export:
+      outdir: {outdir}
+      formats: [fasta]
+      prefix: test
+""".format(outdir=str(tmp_path / "results"))
+
+    cfg = tmp_path / "config.yaml"
+    cfg.write_text(config_with_breaker)
+
+    with patch("biocurator.cli.commands.run.Biocurator") as mock_cls:
+        mock_instance = MagicMock()
+        mock_instance.run_job.return_value = {"fasta": tmp_path / "out.fasta"}
+        mock_cls.return_value = mock_instance
+
+        result = runner.invoke(app, ["run", str(cfg)])
+
+    assert result.exit_code == 0
+    # Verify the main curator received global_breaker kwarg
+    assert mock_cls.call_args is not None
+    assert "global_breaker" in mock_cls.call_args[1], (
+        "Biocurator() was not called with global_breaker keyword argument"
+    )
+    breaker_arg = mock_cls.call_args[1]["global_breaker"]
+    assert breaker_arg is not None, (
+        "global_breaker should not be None when config has breaker block"
+    )
+    assert breaker_arg.fail_max == 3, f"Expected fail_max=3, got {breaker_arg.fail_max}"
+
+
 def test_run_no_check_skips_preflight(tmp_path):
     """--no-check skips pre-flight even if config has preflight_check: true."""
     config_with_pf = """\
