@@ -15,6 +15,7 @@ from typing import Optional
 
 from biocurator.config.schema import BreakerConfig, RetryConfig
 from biocurator.providers import ProviderRegistry, DatabaseConfig, SearchCriteria
+from biocurator.providers.health import HealthChecker
 from biocurator.providers.ncbi import NCBISearchCriteria
 from biocurator.providers.uniprot import UniProtSearchCriteria
 from .filters import SequenceFilter
@@ -78,6 +79,50 @@ class Biocurator:
             "uniprot", uniprot_cfg, self.email
         )
         logger.info(f"Database searchers initialized: {list(self.searchers.keys())}")
+
+    def get_health_status(self) -> list[dict]:
+        """Probe all configured database providers and return health statuses.
+
+        Returns
+        -------
+        list[dict]
+            Each dict has keys: provider, status, response_time_ms, breaker_state, error.
+        """
+        statuses = []
+        for name, searcher in self.searchers.items():
+            searcher_cfg = searcher.config
+            timeout = searcher_cfg.timeout if hasattr(searcher_cfg, "timeout") else 30
+            breaker = (
+                searcher.breaker_state if hasattr(searcher, "breaker_state") else None
+            )
+
+            if name == "ncbi":
+                result = HealthChecker.ping_ncbi(timeout=timeout)
+            elif name == "uniprot":
+                result = HealthChecker.ping_uniprot(timeout=timeout)
+            else:
+                statuses.append(
+                    {
+                        "provider": name,
+                        "status": "UNKNOWN",
+                        "response_time_ms": 0.0,
+                        "breaker_state": breaker,
+                        "error": f"No health check for provider: {name}",
+                    }
+                )
+                continue
+
+            statuses.append(
+                {
+                    "provider": result.provider,
+                    "status": "UP" if result.reachable else "DOWN",
+                    "response_time_ms": result.response_time_ms,
+                    "breaker_state": breaker,
+                    "error": result.error,
+                }
+            )
+
+        return statuses
 
     def run_job(self, job_config, progress_callback=None) -> dict:
         """Run a single curation job from a JobConfig.
