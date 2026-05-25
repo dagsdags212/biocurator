@@ -180,7 +180,11 @@ def run_command(
             console.print("[bold red]Aborted by user.[/bold red]")
             raise typer.Exit(1)
 
-    curator = Biocurator(email=global_config.email, global_retry=global_config.retry)
+    curator = Biocurator(
+        email=global_config.email,
+        global_retry=global_config.retry,
+        global_breaker=global_config.breaker,
+    )
 
     summary_rows = []
 
