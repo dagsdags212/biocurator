@@ -34,7 +34,11 @@ def preview_command(
         raise typer.Exit(1)
 
     job = name_map[job_name]
-    curator = Biocurator(email=global_config.email)
+    curator = Biocurator(
+        email=global_config.email,
+        global_retry=global_config.retry,
+        global_breaker=global_config.breaker,
+    )
 
     console.print(
         f"[bold cyan]Previewing results for job:[/bold cyan] [bold]{job_name}[/bold]"

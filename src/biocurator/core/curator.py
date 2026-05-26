@@ -68,6 +68,7 @@ class Biocurator:
             breaker=self.global_breaker,
         )
         self.searchers["ncbi"] = ProviderRegistry.get("ncbi", ncbi_cfg, self.email)
+        self.searchers["ncbi"]._breaker = self.searchers["ncbi"]._init_breaker()
 
         # Initialize UniProt provider
         uniprot_cfg = DatabaseConfig(
@@ -81,6 +82,7 @@ class Biocurator:
         self.searchers["uniprot"] = ProviderRegistry.get(
             "uniprot", uniprot_cfg, self.email
         )
+        self.searchers["uniprot"]._breaker = self.searchers["uniprot"]._init_breaker()
         logger.info(f"Database searchers initialized: {list(self.searchers.keys())}")
 
     def get_health_status(self) -> list[dict]:
