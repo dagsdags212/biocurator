@@ -99,7 +99,7 @@ class BreakerConfig:
 
     @classmethod
     def from_dict(cls, data: dict | None) -> "BreakerConfig | None":
-        if not data:
+        if data is None:
             return None
         return cls(
             fail_max=data.get("fail_max"),
