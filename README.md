@@ -424,3 +424,79 @@ biocurator --debug run config.yaml
 ## License
 
 MIT
+
+---
+
+## Additional CLI Commands
+
+### `biocurator status`
+
+Probe configured database providers and display their health status.
+
+```
+biocurator status [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--config PATH` / `-c PATH` | `config.yaml` | Path to the YAML config file |
+
+Reads each provider from the config, runs a lightweight connectivity probe, and renders a Rich table with four columns: **Provider**, **Status** (UP/DOWN), **Response Time**, and **Breaker State** (`closed`, `half_open`, or `open`).
+
+```bash
+biocurator status
+biocurator status --config biocurator_config.yaml
+```
+
+### `biocurator jobs`
+
+List all curation jobs defined in the config file.
+
+```
+biocurator jobs [OPTIONS]
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--config PATH` / `-c PATH` | `biocurator_config.yaml` | Path to the YAML config file |
+
+Renders a Rich table with columns: **Job Name**, **Databases**, **Organism**, **Max Results**, **Output Dir**, **Formats**.
+
+```bash
+biocurator jobs
+biocurator jobs --config my_config.yaml
+```
+
+### `biocurator files`
+
+List downloaded output files for one or all jobs, with optional SHA-256 checksum verification.
+
+```
+biocurator files [JOB_NAME] [OPTIONS]
+```
+
+| Argument / Option | Default | Description |
+|-------------------|---------|-------------|
+| `JOB_NAME` | *(all jobs)* | Job name to inspect (omit for a summary of all jobs) |
+| `--config PATH` / `-c PATH` | `biocurator_config.yaml` | Path to the YAML config file |
+| `--verify` | `false` | Re-read files from disk and verify SHA-256 checksums against the manifest |
+
+When called without a job name, shows a summary row per job (output dir, file count, record count, manifest present/absent). When called with a job name, shows per-file details (filename, format, size, record count, first 12 hex digits of SHA-256).
+
+```bash
+# Summary of all jobs
+biocurator files
+
+# Detail for one job
+biocurator files my-job
+
+# Verify checksums for all jobs
+biocurator files --verify
+
+# Verify checksums for one job
+biocurator files my-job --verify
+```
+
+## Circuit Breaker Support
+
+`Biocurator` accepts optional `global_retry` (`RetryConfig`) and `global_breaker` (`BreakerConfig`) parameters that control retry and circuit breaker behaviour across all providers. When a provider exceeds its failure threshold the circuit breaker opens, preventing further requests until the provider recovers. Use `biocurator status` to inspect the current circuit breaker state for each configured provider.

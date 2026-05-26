@@ -10,7 +10,7 @@ wheels/
 .venv
 
 # Design docs
-docs/
+docs/plans/
 
 # Worktrees
 .worktrees/
