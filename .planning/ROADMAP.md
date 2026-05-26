@@ -150,8 +150,8 @@ Plans:
 **Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 08-01-PLAN.md — Preview wiring + BreakerConfig tests + preview regression test (CB-01)
-- [ ] 08-02-PLAN.md — _init_breaker() tests + HealthChecker tests + status_command tests (CB-03)
+- [x] 08-01-PLAN.md — Preview wiring + BreakerConfig tests + preview regression test (CB-01)
+- [x] 08-02-PLAN.md — _init_breaker() tests + HealthChecker tests + status_command tests (CB-03)
 
 ### Phase 9: Checksums Code Review Fixes
 **Goal**: Fix 5 code review findings from Phase 03 checksums/manifests implementation
