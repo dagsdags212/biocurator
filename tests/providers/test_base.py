@@ -1,10 +1,13 @@
 import pytest
+import pybreaker
+from biocurator.config.schema import BreakerConfig
 from biocurator.providers.base import (
     SearchCriteria,
     DatabaseConfig,
     DatabaseSearcher,
     SequenceRecord,
 )
+from biocurator.providers.ncbi.searcher import NCBISearcher
 from abc import ABC
 from pathlib import Path
 from biocurator.providers.base import QueryBuilder
@@ -148,3 +151,32 @@ def test_breaker_state_returns_state_name_not_object_repr():
     # breaker_state property should return a pybreaker state name string
     state = searcher.breaker_state
     assert state in ("closed", "open", "half_open"), f"Got: {state!r}"
+
+
+def test_init_breaker_maps_all_three_parameters():
+    """D-05: Verify BreakerConfig fields map to pybreaker constructor parameters."""
+    brek_cfg = BreakerConfig(fail_max=3, recovery_timeout=45, half_open_max_successes=2)
+    cfg = DatabaseConfig(name="test", breaker=brek_cfg)
+    searcher = NCBISearcher(cfg, "test@example.com")
+    assert searcher._breaker is not None
+    assert searcher._breaker.fail_max == 3
+    assert searcher._breaker.reset_timeout == 45
+    assert searcher._breaker.success_threshold == 2
+
+
+def test_init_breaker_excludes_programming_errors():
+    """Programming errors (ValueError, KeyError, TypeError) should not trip the breaker."""
+    brek_cfg = BreakerConfig(fail_max=3)
+    cfg = DatabaseConfig(name="test", breaker=brek_cfg)
+    searcher = NCBISearcher(cfg, "test@example.com")
+    breaker = searcher._breaker
+    assert ValueError in breaker.excluded_exceptions
+    assert KeyError in breaker.excluded_exceptions
+    assert TypeError in breaker.excluded_exceptions
+
+
+def test_init_breaker_returns_none_when_breaker_config_is_none():
+    """When breaker config is absent, _init_breaker returns None (no-circuit-breaker path)."""
+    cfg = DatabaseConfig(name="test")
+    searcher = NCBISearcher(cfg, "test@example.com")
+    assert searcher._breaker is None
