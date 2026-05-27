@@ -10,6 +10,14 @@ from biocurator.config.schema import BreakerConfig, RetryConfig
 
 
 class NCBIDatabase(str, Enum):
+    """NCBI Entrez database identifiers.
+
+    Only a subset of members are wired to QueryBuilder implementations
+    (see _BUILDER_MAP in providers/ncbi/query_builders.py). Unmapped
+    members are defined here for planned future builders and are
+    currently unused at runtime.
+    """
+
     # Literature & References
     PUBMED = "pubmed"
     PMC = "pmc"

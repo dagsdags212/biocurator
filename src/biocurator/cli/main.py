@@ -12,8 +12,9 @@ from typing import Annotated
 import typer
 from rich import print as rprint
 from rich.console import Console
+from rich.table import Table
 from biocurator.utils.logging import get_logger, enable_verbose_logging
-
+from biocurator import __version__
 
 console = Console()
 logger = get_logger(__name__)
@@ -29,8 +30,6 @@ from biocurator.cli.commands.status import status_command
 
 def _version_callback(value: bool) -> None:
     if value:
-        from biocurator import __version__
-
         rprint(f"Biocurator [bold green]{__version__}[/bold green]")
         raise typer.Exit()
 
@@ -52,6 +51,60 @@ app.command("files")(files_command)
 
 
 # Utility functions for rich output
+def render_health_table(statuses: list[dict], title: str) -> Table:
+    """Build a Rich Table displaying provider health statuses.
+
+    Parameters
+    ----------
+    statuses : list[dict]
+        List of health status dicts with keys: provider, status,
+        response_time_ms, breaker_state, error
+    title : str
+        Table title
+
+    Returns
+    -------
+    Table
+        Configured Rich Table ready for printing.
+    """
+    table = Table(
+        title=title,
+        show_header=True,
+        header_style="bold magenta",
+    )
+    table.add_column("Provider", style="cyan")
+    table.add_column("Status", no_wrap=True)
+    table.add_column("Response Time", justify="right")
+    table.add_column("Breaker State")
+
+    for s in statuses:
+        if s["status"] == "UP":
+            status_display = "[bold green]UP[/bold green]"
+        elif s["status"] == "DOWN":
+            status_display = "[bold red]DOWN[/bold red]"
+        else:
+            status_display = "[bold yellow]UNKNOWN[/bold yellow]"
+
+        bs = s["breaker_state"]
+        if bs == "closed":
+            breaker_display = "[bold green]closed[/bold green]"
+        elif bs == "half_open":
+            breaker_display = "[bold yellow]half_open[/bold yellow]"
+        elif bs == "open":
+            breaker_display = "[bold red]open[/bold red]"
+        elif bs is None:
+            breaker_display = "[dim]N/A[/dim]"
+        else:
+            breaker_display = bs
+
+        rt = s["response_time_ms"]
+        rt_display = f"{rt:.0f}ms" if rt > 0 else "[dim]N/A[/dim]"
+
+        table.add_row(s["provider"], status_display, rt_display, breaker_display)
+
+    return table
+
+
 def print_success(message: str):
     """Print success message with green checkmark."""
     rprint(f"[bold green]✅ {message}[/bold green]")

@@ -10,6 +10,7 @@ from biocurator.providers import (
     UniProtSearchCriteria,
     SearchCriteria,
 )
+from biocurator.providers.base import NCBIDatabase
 
 
 def preview_command(
@@ -72,9 +73,7 @@ def preview_command(
         )
 
         if db_name == "ncbi":
-            from biocurator.providers.base import NCBIDatabase as _NCBIDb
-
-            criteria = NCBISearchCriteria(database=_NCBIDb.NUCCORE, **common_kwargs)
+            criteria = NCBISearchCriteria(database=NCBIDatabase.NUCCORE, **common_kwargs)
         elif db_name == "uniprot":
             criteria = UniProtSearchCriteria(**common_kwargs)
         else:

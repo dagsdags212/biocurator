@@ -9,6 +9,7 @@ based on various criteria such as length, quality, organism, location, etc.
 © Jan Emmanuel Samson (2026-)
 """
 
+from datetime import datetime
 from typing import List, Optional
 from biocurator.providers.base import SequenceRecord
 from biocurator.utils.logging import get_logger
@@ -248,6 +249,57 @@ class SequenceFilter:
         return filtered
 
     @staticmethod
+    def __filter_by_date_field(
+        sequences: List[SequenceRecord],
+        date_str: str,
+        *,  # keyword-only: operator and field_name are named arguments
+        operator: str,
+        field_name: str,
+    ) -> List[SequenceRecord]:
+        """Filter sequences by comparing create_date against a reference date.
+
+        Parameters
+        ----------
+        sequences : List[SequenceRecord]
+            List of SequenceRecord objects
+        date_str : str
+            Reference date in YYYY/MM/DD format
+        operator : str
+            Comparison operator: '>=' or '<='
+        field_name : str
+            Human-readable name for log messages (e.g., 'Start date', 'End date')
+
+        Returns
+        -------
+        List[SequenceRecord]
+            Filtered sequences
+        """
+        op = {">=": lambda a, b: a >= b, "<=": lambda a, b: a <= b}[operator]
+
+        try:
+            ref_dt = datetime.strptime(date_str, "%Y/%m/%d")
+        except ValueError:
+            logger.warning(f"Invalid {field_name.lower()} format: {date_str}")
+            return sequences
+
+        filtered: List[SequenceRecord] = []
+        for seq in sequences:
+            create_date = seq.create_date
+            if create_date:
+                try:
+                    seq_dt = datetime.strptime(create_date, "%Y/%m/%d")
+                    if op(seq_dt, ref_dt):
+                        filtered.append(seq)
+                except ValueError:
+                    # Include sequences with unparseable dates
+                    filtered.append(seq)
+            else:
+                filtered.append(seq)
+
+        logger.info(f"{field_name} filter: {len(filtered)} sequences remain")
+        return filtered
+
+    @staticmethod
     def filter_by_date_range(
         sequences: List[SequenceRecord],
         start_date: Optional[str] = None,
@@ -269,56 +321,16 @@ class SequenceFilter:
         List[SequenceRecord]
             Filtered sequences
         """
-        from datetime import datetime
-
         filtered = sequences.copy()
 
         if start_date:
-            try:
-                start_dt = datetime.strptime(start_date, "%Y/%m/%d")
-                new_filtered = []
-
-                for seq in filtered:
-                    create_date = seq.create_date
-                    if create_date:
-                        try:
-                            seq_dt = datetime.strptime(create_date, "%Y/%m/%d")
-                            if seq_dt >= start_dt:
-                                new_filtered.append(seq)
-                        except ValueError:
-                            # Include sequences with unparseable dates
-                            new_filtered.append(seq)
-                    else:
-                        new_filtered.append(seq)
-
-                filtered = new_filtered
-                logger.info(f"Start date filter: {len(filtered)} sequences remain")
-
-            except ValueError:
-                logger.warning(f"Invalid start date format: {start_date}")
+            filtered = SequenceFilter.__filter_by_date_field(
+                filtered, start_date, operator=">=", field_name="Start date"
+            )
 
         if end_date:
-            try:
-                end_dt = datetime.strptime(end_date, "%Y/%m/%d")
-                new_filtered = []
-
-                for seq in filtered:
-                    create_date = seq.create_date
-                    if create_date:
-                        try:
-                            seq_dt = datetime.strptime(create_date, "%Y/%m/%d")
-                            if seq_dt <= end_dt:
-                                new_filtered.append(seq)
-                        except ValueError:
-                            # Include sequences with unparseable dates
-                            new_filtered.append(seq)
-                    else:
-                        new_filtered.append(seq)
-
-                filtered = new_filtered
-                logger.info(f"End date filter: {len(filtered)} sequences remain")
-
-            except ValueError:
-                logger.warning(f"Invalid end date format: {end_date}")
+            filtered = SequenceFilter.__filter_by_date_field(
+                filtered, end_date, operator="<=", field_name="End date"
+            )
 
         return filtered

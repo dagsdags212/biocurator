@@ -1,6 +1,7 @@
 from typing import Annotated, Optional, Dict
 import typer
 from biocurator.cli.main import console
+from rich.table import Table
 from rich.progress import (
     Progress,
     SpinnerColumn,
@@ -27,47 +28,11 @@ def _run_preflight_check(curator: "Biocurator", job_names: list[str]) -> bool:
     Probes all configured providers, renders a Rich health table, and
     prompts the user to proceed or abort if any provider is unreachable.
     """
-    from biocurator.cli.main import console
-    from rich.table import Table
-
     statuses = curator.get_health_status()
 
-    # Render health table matching biocurator status format
-    table = Table(
-        title="Pre-flight Health Check",
-        show_header=True,
-        header_style="bold magenta",
-    )
-    table.add_column("Provider", style="cyan")
-    table.add_column("Status", no_wrap=True)
-    table.add_column("Response Time", justify="right")
-    table.add_column("Breaker State")
+    from biocurator.cli.main import render_health_table
 
-    for s in statuses:
-        if s["status"] == "UP":
-            status_display = "[bold green]UP[/bold green]"
-        elif s["status"] == "DOWN":
-            status_display = "[bold red]DOWN[/bold red]"
-        else:
-            status_display = "[bold yellow]UNKNOWN[/bold yellow]"
-
-        bs = s["breaker_state"]
-        if bs == "closed":
-            breaker_display = "[bold green]closed[/bold green]"
-        elif bs == "half_open":
-            breaker_display = "[bold yellow]half_open[/bold yellow]"
-        elif bs == "open":
-            breaker_display = "[bold red]open[/bold red]"
-        elif bs is None:
-            breaker_display = "[dim]N/A[/dim]"
-        else:
-            breaker_display = bs
-
-        rt = s["response_time_ms"]
-        rt_display = f"{rt:.0f}ms" if rt > 0 else "[dim]N/A[/dim]"
-
-        table.add_row(s["provider"], status_display, rt_display, breaker_display)
-
+    table = render_health_table(statuses, "Pre-flight Health Check")
     console.print()
     console.print(table)
     console.print()

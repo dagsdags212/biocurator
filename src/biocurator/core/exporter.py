@@ -150,8 +150,6 @@ class StreamingExporter:
         # JSON — hash every write including commas and record data
         if "json" in self.file_handles:
             f = self.file_handles["json"]
-            if not hasattr(self, "_json_count"):
-                self._json_count = 0
 
             if self._json_count > 0:
                 f.write(",\n")

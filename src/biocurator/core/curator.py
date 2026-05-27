@@ -14,6 +14,8 @@ from typing import Optional
 
 from biocurator.config.schema import BreakerConfig, RetryConfig
 from biocurator.providers import ProviderRegistry, DatabaseConfig, SearchCriteria
+from biocurator.providers.base import NCBIDatabase
+from .exporter import StreamingExporter
 from biocurator.providers.health import HealthChecker
 from biocurator.providers.ncbi import NCBISearchCriteria
 from biocurator.providers.uniprot import UniProtSearchCriteria
@@ -68,7 +70,6 @@ class Biocurator:
             breaker=self.global_breaker,
         )
         self.searchers["ncbi"] = ProviderRegistry.get("ncbi", ncbi_cfg, self.email)
-        self.searchers["ncbi"]._breaker = self.searchers["ncbi"]._init_breaker()
 
         # Initialize UniProt provider
         uniprot_cfg = DatabaseConfig(
@@ -82,7 +83,6 @@ class Biocurator:
         self.searchers["uniprot"] = ProviderRegistry.get(
             "uniprot", uniprot_cfg, self.email
         )
-        self.searchers["uniprot"]._breaker = self.searchers["uniprot"]._init_breaker()
         logger.info(f"Database searchers initialized: {list(self.searchers.keys())}")
 
     def get_health_status(self) -> list[dict]:
@@ -144,8 +144,6 @@ class Biocurator:
         dict
             Mapping of format name to output file Path.
         """
-        from .exporter import StreamingExporter
-
         def _report(phase, current, total):
             if progress_callback:
                 progress_callback(phase, current, total)
@@ -218,10 +216,8 @@ class Biocurator:
                     else None,
                 )
                 if db_name == "ncbi":
-                    from biocurator.providers.base import NCBIDatabase as _NCBIDb
-
                     criteria = NCBISearchCriteria(
-                        database=_NCBIDb.NUCCORE, **common_kwargs
+                        database=NCBIDatabase.NUCCORE, **common_kwargs
                     )
                 elif db_name == "uniprot":
                     criteria = UniProtSearchCriteria(**common_kwargs)

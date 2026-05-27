@@ -10,7 +10,6 @@ configured database providers and displaying health status.
 
 from typing import Annotated
 import typer
-from rich.table import Table
 from biocurator.cli.main import console
 from biocurator.config.loader import ConfigLoader
 from biocurator.core.curator import Biocurator
@@ -49,46 +48,11 @@ def status_command(
 
     console.print("[bold blue]Probing provider health...[/bold blue]\n")
 
+    from biocurator.cli.main import render_health_table
+
     statuses = curator.get_health_status()
 
-    table = Table(
-        title="Provider Health Status",
-        show_header=True,
-        header_style="bold magenta",
-    )
-    table.add_column("Provider", style="cyan")
-    table.add_column("Status", no_wrap=True)
-    table.add_column("Response Time", justify="right")
-    table.add_column("Breaker State")
-
-    for s in statuses:
-        if s["status"] == "UP":
-            status_display = "[bold green]UP[/bold green]"
-        elif s["status"] == "DOWN":
-            status_display = "[bold red]DOWN[/bold red]"
-        else:
-            status_display = "[bold yellow]UNKNOWN[/bold yellow]"
-
-        bs = s["breaker_state"]
-        if bs == "closed":
-            breaker_display = "[bold green]closed[/bold green]"
-        elif bs == "half_open":
-            breaker_display = "[bold yellow]half_open[/bold yellow]"
-        elif bs == "open":
-            breaker_display = "[bold red]open[/bold red]"
-        elif bs is None:
-            breaker_display = "[dim]N/A[/dim]"
-        else:
-            breaker_display = bs
-
-        rt = s["response_time_ms"]
-        if rt > 0:
-            rt_display = f"{rt:.0f}ms"
-        else:
-            rt_display = "[dim]N/A[/dim]"
-
-        table.add_row(s["provider"], status_display, rt_display, breaker_display)
-
+    table = render_health_table(statuses, "Provider Health Status")
     console.print(table)
     console.print()
 
