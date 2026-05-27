@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import MagicMock
 from biocurator.providers.base import DatabaseConfig
 from biocurator.providers.uniprot import UniProtSearcher, UniProtSearchCriteria
 from biocurator.providers.registry import ProviderRegistry
@@ -114,3 +115,44 @@ def test_download_continues_on_single_failure(searcher):
         with tempfile.TemporaryDirectory() as tmpdir:
             results = list(searcher.download(["P12345"], Path(tmpdir), criteria))
             assert results == []
+
+
+def test_search_via_breaker_on_network_failure(searcher):
+    """Breaker wraps search() and trips on repeated network failures."""
+    from biocurator.config.schema import BreakerConfig
+    from biocurator.exceptions import DatabaseSearchError
+
+    searcher.config.breaker = BreakerConfig(fail_max=1, recovery_timeout=60)
+    searcher._breaker = searcher._init_breaker()
+    assert searcher.breaker_state == "closed"
+
+    criteria = UniProtSearchCriteria(organism="Homo sapiens")
+
+    def _fail(*args, **kwargs):
+        raise ConnectionError("connection refused")
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(searcher, "_safe_get", _fail)
+        with pytest.raises(DatabaseSearchError):
+            searcher.search(criteria)
+
+    assert searcher.breaker_state == "open"
+
+
+def test_search_breaker_closed_on_success(searcher):
+    """Breaker remains closed when search succeeds."""
+    from biocurator.config.schema import BreakerConfig
+
+    searcher.config.breaker = BreakerConfig(fail_max=1, recovery_timeout=60)
+    searcher._breaker = searcher._init_breaker()
+
+    criteria = UniProtSearchCriteria(organism="Homo sapiens")
+    with pytest.MonkeyPatch.context() as mp:
+        mock_response = MagicMock()
+        mock_response.text = "accession\nP12345"
+        mock_response.raise_for_status.return_value = None
+        mp.setattr(searcher, "_safe_get", lambda *a, **kw: mock_response)
+        result = searcher.search(criteria)
+
+    assert searcher.breaker_state == "closed"
+    assert result == ["P12345"]

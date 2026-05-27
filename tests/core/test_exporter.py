@@ -221,3 +221,30 @@ def test_record_counts_accurate(tmp_path, sample_record, sample_job_config):
         exporter.write_record(sample_record)
 
     assert exporter._record_counts["fasta"] == 3
+
+
+def test_exception_during_export_suppresses_manifest(tmp_path, sample_record, sample_job_config):
+    """When an exception occurs inside the with block, no manifest is written."""
+    outdir = Path(sample_job_config.export.outdir)
+
+    with pytest.raises(RuntimeError, match="export failed"):
+        with StreamingExporter(
+            outdir,
+            sample_job_config.export.prefix,
+            ["fasta"],
+            job_name=sample_job_config.name,
+            databases=sample_job_config.search.databases,
+            job_config=sample_job_config,
+        ) as exporter:
+            exporter.write_record(sample_record)
+            raise RuntimeError("export failed")
+
+    # No manifest should exist because the export was aborted
+    assert not (outdir / "manifest.json").exists()
+    assert not (outdir / "manifest-sha256.txt").exists()
+
+    # The FASTA file should still exist (written before exception)
+    fasta_path = outdir / f"{sample_job_config.export.prefix}_sequences.fasta"
+    assert fasta_path.exists()
+    content = fasta_path.read_text()
+    assert ">NC_012345.1" in content

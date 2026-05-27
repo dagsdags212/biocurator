@@ -130,3 +130,41 @@ def test_download_continues_on_single_failure(searcher):
     ):
         results = list(searcher.download(["123"], Path("/tmp"), criteria))
         assert results == []
+
+
+def test_search_via_breaker_on_network_failure(searcher):
+    """Breaker wraps search() and trips on repeated network failures."""
+    from biocurator.config.schema import BreakerConfig
+    from biocurator.exceptions import DatabaseSearchError
+
+    # Configure a breaker that trips after 1 failure
+    searcher.config.breaker = BreakerConfig(fail_max=1, recovery_timeout=60)
+    searcher._breaker = searcher._init_breaker()
+    assert searcher.breaker_state == "closed"
+
+    criteria = NCBISearchCriteria(organism="Homo sapiens")
+    with patch.object(
+        searcher, "_safe_entrez_call", side_effect=ConnectionError("timeout")
+    ):
+        with pytest.raises(DatabaseSearchError):
+            searcher.search(criteria)
+
+    # Breaker should have tripped to open
+    assert searcher.breaker_state == "open"
+
+
+def test_search_breaker_closed_on_success(searcher):
+    """Breaker remains closed when search succeeds."""
+    from biocurator.config.schema import BreakerConfig
+
+    searcher.config.breaker = BreakerConfig(fail_max=1, recovery_timeout=60)
+    searcher._breaker = searcher._init_breaker()
+
+    criteria = NCBISearchCriteria(organism="Homo sapiens")
+    with patch.object(
+        searcher, "_safe_entrez_call", return_value={"IdList": ["123"], "WebEnv": None, "QueryKey": None}
+    ):
+        result = searcher.search(criteria)
+
+    assert searcher.breaker_state == "closed"
+    assert result == ["123"]

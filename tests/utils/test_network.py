@@ -56,3 +56,18 @@ def test_not_retryable_value_error():
 
 def test_not_retryable_key_error():
     assert not _is_retryable(KeyError("missing"))
+
+
+def test_make_retryer_creates_retrying_instance():
+    """make_retryer returns a configured Retrying instance."""
+    import logging
+    from biocurator.config.schema import RetryConfig
+    from biocurator.utils.retryable_exceptions import make_retryer
+
+    cfg = RetryConfig(max_attempts=3, backoff_factor=2.0, max_delay=60, timeout=30)
+    retryer = make_retryer(cfg, logging.getLogger("test"))
+
+    assert retryer.stop.max_attempt_number == 3
+    assert retryer.wait.multiplier == 2.0
+    assert retryer.wait.max == 60
+    assert retryer.reraise is True
