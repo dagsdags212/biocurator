@@ -1,8 +1,17 @@
+import logging
 import socket
 import urllib.error
 
 import requests
-from tenacity import retry_if_exception
+from tenacity import (
+    Retrying,
+    before_sleep_log,
+    retry_if_exception,
+    stop_after_attempt,
+    wait_exponential,
+)
+
+from biocurator.config.schema import RetryConfig
 
 
 def _is_retryable(exc: Exception) -> bool:
@@ -29,3 +38,30 @@ def _is_retryable(exc: Exception) -> bool:
 
 
 RETRYABLE_PREDICATE = retry_if_exception(_is_retryable)
+
+
+def make_retryer(retry_config: RetryConfig, logger: logging.Logger) -> Retrying:
+    """Create a tenacity Retrying instance configured with retryable-exception predicate.
+
+    Parameters
+    ----------
+    retry_config : RetryConfig
+        Resolved retry configuration (max_attempts, backoff_factor, max_delay).
+    logger : logging.Logger
+        Logger used for before-sleep warning messages between retry attempts.
+
+    Returns
+    -------
+    Retrying
+        Configured retryer instance.
+    """
+    return Retrying(
+        stop=stop_after_attempt(retry_config.max_attempts),
+        wait=wait_exponential(
+            multiplier=retry_config.backoff_factor,
+            max=retry_config.max_delay,
+        ),
+        retry=RETRYABLE_PREDICATE,
+        reraise=True,
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )

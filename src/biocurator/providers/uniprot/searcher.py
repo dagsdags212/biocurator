@@ -8,12 +8,7 @@ import pybreaker
 from requests import Session
 
 from Bio import SeqIO
-from tenacity import (
-    Retrying,
-    before_sleep_log,
-    stop_after_attempt,
-    wait_exponential,
-)
+from tenacity import Retrying
 
 from biocurator.config.schema import RetryConfig
 from biocurator.exceptions import DatabaseSearchError
@@ -22,7 +17,7 @@ from biocurator.providers.uniprot.criteria import UniProtSearchCriteria
 from biocurator.providers.uniprot.query_builders import UniProtQueryBuilder
 from biocurator.providers.registry import ProviderRegistry
 from biocurator.utils.logging import get_logger
-from biocurator.utils.retryable_exceptions import RETRYABLE_PREDICATE
+from biocurator.utils.retryable_exceptions import RETRYABLE_PREDICATE, make_retryer
 
 logger = get_logger(__name__)
 
@@ -44,16 +39,7 @@ class UniProtSearcher(DatabaseSearcher[UniProtSearchCriteria]):
         retry_cfg = (
             self.config.retry.resolve() if self.config.retry else RetryConfig.defaults()
         )
-        return Retrying(
-            stop=stop_after_attempt(retry_cfg.max_attempts),
-            wait=wait_exponential(
-                multiplier=retry_cfg.backoff_factor,
-                max=retry_cfg.max_delay,
-            ),
-            retry=RETRYABLE_PREDICATE,
-            reraise=True,
-            before_sleep=before_sleep_log(logger, logging.WARNING),
-        )
+        return make_retryer(retry_cfg, logger)
 
     def _safe_get(self, url: str, **kwargs):
         """Execute an HTTP GET with retry logic.
