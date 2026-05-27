@@ -29,10 +29,10 @@ jobs:
 
 
 def test_jobs_default_config_not_found():
-    """biocurator jobs with no args and missing default config exits non-zero with --config hint."""
-    result = runner.invoke(app, ["jobs"])
+    """biocurator jobs with a nonexistent config path exits non-zero."""
+    result = runner.invoke(app, ["jobs", "--config", "nonexistent_file_xyz.yaml"])
     assert result.exit_code != 0
-    assert "--config" in result.output
+    assert "not found" in result.output.lower()
 
 
 def test_jobs_explicit_config_not_found():

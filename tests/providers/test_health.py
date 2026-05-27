@@ -36,40 +36,30 @@ class TestHealthChecker:
         assert result.response_time_ms > 0
         assert result.error == "Connection refused"
 
-    def test_ping_uniprot_reachable(self):
+    @patch("requests.get")
+    @patch("biocurator.providers.health.time.monotonic")
+    def test_ping_uniprot_reachable(self, mock_time, mock_get):
         """ping_uniprot returns reachable=True when requests.get returns 200."""
-        mock_requests = MagicMock()
         mock_response = MagicMock()
         mock_response.raise_for_status.return_value = None
-        mock_requests.get.return_value = mock_response
-
-        mock_time = MagicMock()
+        mock_get.return_value = mock_response
         mock_time.side_effect = [1000.0, 1001.2]  # start=1000, end=1001.2 → 1.2ms
 
-        with (
-            patch.dict("sys.modules", {"requests": mock_requests}),
-            patch("biocurator.providers.health.time.monotonic", mock_time),
-        ):
-            result = HealthChecker.ping_uniprot(timeout=30)
+        result = HealthChecker.ping_uniprot(timeout=30)
 
         assert result.provider == "uniprot"
         assert result.reachable is True
         assert result.response_time_ms > 0
         assert result.error is None
 
-    def test_ping_uniprot_unreachable(self):
+    @patch("requests.get")
+    @patch("biocurator.providers.health.time.monotonic")
+    def test_ping_uniprot_unreachable(self, mock_time, mock_get):
         """ping_uniprot returns reachable=False with error when requests.get raises."""
-        mock_requests = MagicMock()
-        mock_requests.get.side_effect = Exception("Timeout")
-
-        mock_time = MagicMock()
+        mock_get.side_effect = Exception("Timeout")
         mock_time.side_effect = [1000.0, 1001.8]  # start=1000, end=1001.8 → 1.8ms
 
-        with (
-            patch.dict("sys.modules", {"requests": mock_requests}),
-            patch("biocurator.providers.health.time.monotonic", mock_time),
-        ):
-            result = HealthChecker.ping_uniprot(timeout=30)
+        result = HealthChecker.ping_uniprot(timeout=30)
 
         assert result.provider == "uniprot"
         assert result.reachable is False

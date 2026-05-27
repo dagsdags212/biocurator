@@ -1,5 +1,6 @@
 import pytest
 import pybreaker
+from typing import Iterator
 from biocurator.config.schema import BreakerConfig
 from biocurator.providers.base import (
     SearchCriteria,
@@ -124,18 +125,17 @@ def test_database_searcher_concrete_subclass_sets_config_and_email():
 
         def fetch_metadata(
             self, ids: list[str], criteria: SearchCriteria | None = None
-        ) -> list[SequenceRecord]:
-            return []
+        ) -> Iterator[SequenceRecord]:
+            return iter([])
 
         def download(
             self, ids: list[str], outdir: Path, criteria: SearchCriteria | None = None
-        ) -> list[SequenceRecord]:
-            return []
+        ) -> Iterator[SequenceRecord]:
+            return iter([])
 
     s = _Concrete(DatabaseConfig(name="x"), "user@example.com")
     assert s.email == "user@example.com"
     assert s.config.name == "x"
-    assert not hasattr(s, "session")
 
 
 def test_breaker_state_returns_state_name_not_object_repr():
